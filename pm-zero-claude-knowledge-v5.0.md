@@ -1,20 +1,24 @@
-# 要件定義PM エージェント — ナレッジシート v4.0
+# pm-zero-claude — ナレッジシート v5.0
 
 用途：Claude.ai プロジェクトの「Knowledge」にアップロードする。
 機能：ユーザーの曖昧なアイデアを、Claude Codeが自律実行できる
-4成果物（CLAUDE.md / vision.md / settings.json / MCP初期化コマンド）に変換する。
+5成果物（CLAUDE.md / vision.md / settings.json / MCP初期化コマンド / issues.md）に変換する。
 
-v3.1 → v4.0 変更点：
-- Claude Code v2.1.90 対応（Auto Mode / Skills / 1Mコンテキスト / effortレベル刷新）
-- ソースコード流出（2026年3月）で判明した内部仕様を反映（CLAUDE.mdは会話メッセージに注入、システムプロンプトではない）
-- Next.js 16（2025年10月GA）の破壊的変更に対応（async API強制 / middleware→proxy.ts / Turbopackデフォルト）
-- React 19.2 / Tailwind CSS v4 CSS-First Configuration に対応
-- Brave Search MCP v2 への移行（旧パッケージ非推奨）
-- MCPトークン最適化戦略を全面刷新（Tool Search / CLI+Skills代替 / 98.7%削減パターン）
-- 外部サービス事前調査ルール（B-3c）を新設（429エラー＋古いモデル使用の再発防止）
-- Hooks（確定的ルール強制）の導入
-- プロジェクト横断自己進化メカニズム（セクション[K]）を新設（/evコマンド + xp-rules.md）
-- 品質チェックリストを14→17項目に拡充
+v4.0 → v5.0 変更点：
+- システム正式名称を「pm-zero-claude」に統一
+- Claude Code v2.1.91 対応（Auto Mode GA / Skills / Hooks 25+イベント / 1Mコンテキスト GA）
+- Next.js 16.2（2026年3月最新安定版）対応確認
+- React 19.2.4 / Tailwind CSS v4.2 / shadcn/ui v4.1 対応
+- shadcn/ui 非対話モード（`-d`フラグ）導入 — 非エンジニアの判断不要に
+- issues.md 自動エラー記録ファイル新設 — /ev の品質向上
+- 全タスク完了後の Git 自動コミット＋GitHub 手順の明確化
+- /ev コマンドで README.md 自動生成を追加
+- プロジェクト初期化手順を「順番通りコピペ」形式に全面簡略化
+- settings.json の allow 拡張 — タスク途中の不要な確認を削減
+- Hooks（確定的ルール強制）の設定例を追加
+- && チェーン → 個別コマンド（シェル互換性対応）
+- xp-rules.md の既存ルール統合済み
+- 品質チェックリスト 17→19 項目
 
 ---
 
@@ -22,12 +26,13 @@ v3.1 → v4.0 変更点：
 
 A-1. コンテキスト200K（標準）/ 1M（拡張・GA・追加料金なし）。命令遵守の実効上限は約200命令。
 A-2. CLAUDE.md 200行以内。30-100行が最高効率帯。1行追加で全命令の遵守率が均一低下。
-A-3. MCPサーバーのトークン消費：軽量（3-4ツール）≒1,000-2,000、重量級（20+ツール）≒10,000+。同時アクティブツール10-15個以下を推奨。
-A-4. コンテキスト使用率40%が最高品質帯。60%で注意力低下。83%でコンパクション自動発動。90%で幻覚急増。
+A-3. MCPサーバーのトークン消費：Tool Search有効時、未使用ツールは自動遅延ロード（最大85%削減）。同時アクティブツール10-15個以下を推奨。
+A-4. コンテキスト使用率40%が最高品質帯。60%で注意力低下。75-92%でコンパクション自動発動。90%で幻覚急増。
 A-5. ロジックエラー率は人間の1.75倍。検証なき完了宣言は信頼できない。
 A-6. 具体仕様→1-2ラウンド。曖昧仕様→5-8ラウンド。原子的タスク分割→コスト58%削減。
-A-7. CLAUDE.mdはシステムプロンプトではなく、`<system-reminder>`タグとして会話メッセージに注入される。Claudeは「関連性なし」と判断して無視し得る。非普遍的な指示が多いほど無視リスクが上昇する。
+A-7. CLAUDE.mdはシステムプロンプトではなく、`<system-reminder>`タグとしてユーザーメッセージに注入される（isMeta: true）。Claudeは「関連性なし」と判断して無視し得る。非普遍的な指示が多いほど無視リスクが上昇する。
 A-8. 100%遵守が必要なルールはCLAUDE.md（確率的）ではなくHooks（確定的）で強制する。
+A-9. Skills はディレクトリベースの能力パッケージ。起動時コストゼロ（名前+説明のみロード）。MCP代替として検討する。
 
 ---
 
@@ -42,14 +47,16 @@ Next.js 16+ (App Router) / React 19 / TypeScript (strict: true) / Tailwind CSS v
 
 ### B-2. 地雷回避ルール（トリガー→アクション形式）
 - Tailwind のスタイル設定時 → globals.css の @theme で定義する。tailwind.config.ts は作らない（v4でCSS-First Configurationに移行済み）
+- globals.css の先頭 → `@import "tailwindcss"` の1行にする。@tailwind base/components/utilities は使わない
+- postcss.config に postcss-import や autoprefixer を書かない → Tailwind v4 が内部処理する（Lightning CSS統合済み）
 - ページコンポーネントで params/searchParams を使う時 → 必ず await で非同期アクセスする（Next.js 16で同期アクセスは完全削除済み）
-- cookies() / headers() を使う時 → 必ず await する（Next.js 16で同期アクセスは完全削除済み）
+- cookies() / headers() / draftMode() を使う時 → 必ず await する（Next.js 16で同期アクセスは完全削除済み）
 - middleware を使う時 → ファイル名は proxy.ts、エクスポート関数名も proxy にする（Next.js 16で middleware.ts は廃止）
 - パッケージの依存関係エラー時 → --force ではなく pnpm を使う
-- Vercel にデプロイする前 → npx tsc --noEmit && pnpm lint && pnpm build をローカルで実行する
+- Vercel にデプロイする前 → npx tsc --noEmit と pnpm lint と pnpm build をローカルで実行する
 - Server Component をデフォルトにする。"use client" は状態管理やブラウザAPIが必要な時だけ追加し、コンポーネントツリーの末端（リーフ）に配置する
-- @tailwind base/components/utilities を使わない → @import "tailwindcss" の1行に置き換える
-- postcss.config に postcss-import や autoprefixer を書かない → Tailwind v4 が内部処理する
+- ブラウザ専用API（IndexedDB / localStorage / Web Speech API等）を使うコンポーネントをpage.tsxから呼ぶ時 → page.tsx自体に"use client"を付け、dynamic(() => import(...), { ssr: false })でSSRを無効化する
+- layout.tsx で <html> タグを書く時 → suppressHydrationWarning 属性を必ず付ける
 
 ### B-3. 知識同期ルール（Context7 MCP）
 - Next.js / React / Tailwind / shadcn/ui / Supabase / Prisma のAPIを使う時 → 必ず Context7 MCP で公式ドキュメントを確認してから実装する。推測で実装しない。例外なし
@@ -58,7 +65,7 @@ Next.js 16+ (App Router) / React 19 / TypeScript (strict: true) / Tailwind CSS v
 - エラーの解決策を調べる時 → Brave Search MCP で最新の情報を検索する
 - ライブラリの選定・比較を行う時 → Brave Search MCP で現在の評価・互換性を確認する
 
-### B-3c. 外部サービス事前調査ルール（v4.0新設）
+### B-3c. 外部サービス事前調査ルール
 - 外部API・サービス・AIモデルを使う時 → 実装前に Brave Search MCP で以下を必ず確認する：
   (1) 現在の最新バージョン/モデル名（古いバージョンを使わない）
   (2) 無料枠の制限（RPM / TPM / 日次クォータ / 月次クォータ）
@@ -79,14 +86,24 @@ Next.js 16+ (App Router) / React 19 / TypeScript (strict: true) / Tailwind CSS v
   (3) 解決に不足している情報を特定する
   (4) ユーザーに判断を仰ぐ
 
+### B-5b. エラー自動記録ルール（v5.0新設）
+- エラーが発生した時 → issues.md に以下を追記する：
+  日時、タスク名、エラー内容、試した修正、結果（解決/未解決）
+- 手戻りが発生した時 → issues.md に原因と対処を追記する
+- issues.md は /ev コマンド時に教訓抽出の入力として使う
+
 ### B-6. 3層境界
 - ✅ Always: テスト実行、lint通過確認、動作確認コミット、Plan Mode でのタスク開始
-- ⚠️ Ask first: 新規依存の追加、DB/APIスキーマ変更、設定ファイル（package.json等）の変更
+- ⚠️ Ask first: 新規依存の追加、DB/APIスキーマ変更
 - 🚫 Never: .env のコミット、node_modules 編集、失敗テストの削除
 
 ### B-7. コンテキスト管理
 - /compact 時は変更ファイル一覧と現在のタスク状況を必ず保持する
 - 3タスク完了ごと、または30分経過時 → /context でトークン使用率を確認しユーザーに報告する
+
+### B-7b. Git自動化ルール（v5.0新設）
+- 各タスク完了時 → git add . と git commit -m "[タスク名]: [変更内容の要約]" を実行する
+- 全タスク完了時 → ユーザーに GitHub プッシュ手順を提示する（後述のハンドオフ参照）
 
 ### B-8. 自己改善
 - 間違えた時 → このファイルにルールを追加して再発防止する（最終行に記載）
@@ -100,7 +117,7 @@ Next.js 16+ (App Router) / React 19 / TypeScript (strict: true) / Tailwind CSS v
 
 ### C-1. Context7（必須・グローバル・事前導入済み）
 インストール：claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest
-APIキー不要。無料。ユーザーが事前にグローバル導入済み。
+APIキー不要。無料（基本レート制限あり）。ユーザーが事前にグローバル導入済み。
 CLAUDE.md記述：B-3 を参照。
 
 ### C-2. Playwright（必須・プロジェクト単位・毎回導入）
@@ -109,13 +126,13 @@ CLAUDE.md記述：B-4 を参照。
 工数：1フローのテストに30-60分。
 
 ### C-3. Brave Search（必須・グローバル・事前導入済み）
-インストール：claude mcp add brave-search -s user -- npx -y @brave/brave-search-mcp-server
-※旧パッケージ `@modelcontextprotocol/server-brave-search` は非推奨。v2に移行済み。
-無料枠2,000クエリ/月。ユーザーが事前にグローバル導入済み。
+インストール：claude mcp add brave-search -s user -e BRAVE_API_KEY=your-key -- npx -y @brave/brave-search-mcp-server
+※旧パッケージ `@modelcontextprotocol/server-brave-search` は非推奨・廃止。v2に移行済み。
+無料枠：月$5クレジット（約1,000クエリ/月）。ユーザーが事前にグローバル導入済み。
 CLAUDE.md記述：B-3b, B-3c を参照。
 
 ### C-4. トークン最適化の原則
-- MCP Tool Search（Claude Code内蔵）が自動で未使用ツール定義を遅延ロードする（最大85%削減）
+- MCP Tool Search（Claude Code内蔵・デフォルト有効）が自動で未使用ツール定義を遅延ロードする（最大85%削減）
 - MCP説明文は英語で記述する（日本語比で約50%トークン削減）
 - 同時アクティブツールは10-15個以下に保つ
 - MCPで重い処理はCLI + Skillsでの代替を検討する（MCP 13K-18K → CLI 約225トークン）
@@ -142,19 +159,42 @@ Bash(git push --force *), Bash(git push -f *)
 ```
 Read, Glob, Grep, LS, WebFetch, WebSearch,
 Write(src/**), Edit(src/**),
-Write(public/**), Edit(public/**)
+Write(public/**), Edit(public/**),
+Write(./issues.md), Edit(./issues.md),
+Write(./CLAUDE.md), Edit(./CLAUDE.md)
 ```
-設計根拠：src/ 内のソースコードと public/ の静的ファイルは自由に編集させる。
-設定ファイル（package.json, tsconfig.json, next.config.*, CLAUDE.md）への
-Write/Edit は未指定のまま（変更時に確認を求める）。
-非エンジニアはコードの差分を読めない。
-差分承認は安全弁として機能しない。
-本当の安全弁は build/lint/test の通過。
+設計根拠：
+- src/ 内のソースコードと public/ の静的ファイルは自由に編集させる。
+- issues.md はエラー記録用。確認不要で即時書き込み可能にする。
+- CLAUDE.md は自己改善ルール（B-8）のため自由編集を許可する。
+- 設定ファイル（package.json, tsconfig.json, next.config.*）へのWrite/Editは未指定（変更時に確認）。
+- 非エンジニアはコードの差分を読めない。差分承認は安全弁として機能しない。本当の安全弁は build/lint/test の通過。
 
 ### 動的 allow（プロジェクトごとにPMが生成）
 パッケージマネージャに対応した dev/build/lint/test コマンド。
 git status, git diff *, git log *, git add *, git commit *。
 プロジェクト固有CLIツール。
+
+### Hooks（確定的ルール強制・v5.0新設）
+settings.json 内の hooks キーで設定する。以下はPMが生成するデフォルトHooks：
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(jq -r '.tool_input.file_path // empty'); if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|tsx|js|jsx)$'; then npx prettier --write \"$FILE\" 2>/dev/null; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ---
 
@@ -187,6 +227,7 @@ HIGH影響度のASSUMPTIONが3つ蓄積した時点で以下を実行する：
 3. Pages & UI（全画面リスト、空間階層レイアウト、デザインシステム名）
 4. Data Model（エンティティ、関係、必須フィールド、型）
 5. Task Breakdown（各タスク＝1文・1成果物・1検証。最終タスクは必ず「Vercelデプロイ確認」）
+   外部API/サービスを使うタスクには事前調査を前提タスクとして追加する
 6. Out of Scope（やらないこと + バックログ）
 7. Assumptions（[ASSUMPTION]タグ付き全仮定）
 
@@ -230,42 +271,78 @@ H-2. 30分ごと、または3タスク完了ごとに /compact（変更ファイ
 H-3. /context でトークン使用率を定期確認。60%超で即 /compact。
 H-4. 複雑タスクは Document & Clear（progress.md に保存 → /clear → 再開）。
 H-5. 制限到達時 → 一時停止して解除を待つ。
-H-6. ultrathink の使い分け：通常タスク→デフォルト（medium effort）。設計判断・複雑バグ→「think hard」。アーキテクチャ決定→「ultrathink」。
+H-6. effortの使い分け：通常タスク→デフォルト（medium）。設計判断・複雑バグ→「think hard」。アーキテクチャ決定→「ultrathink」。
 
 ---
 
 ## [I] プロジェクト初期化手順（ハンドオフ時に提供）
 
+以下を1つずつ順番にコピペして実行する。
+
 ```
-# 1. プロジェクト作成（手動。Claude Codeにやらせない）
-npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
+# ステップ1: プロジェクト作成
+npx create-next-app@latest my-app --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm
+```
+
+```
+# ステップ2: プロジェクトに移動
 cd my-app
-npx shadcn@latest init
-git init && git add . && git commit -m "initial scaffold"
+```
 
-# 2. プロジェクト単位MCP 導入（Playwrightのみ。Context7とBrave Searchはグローバル導入済み）
+```
+# ステップ3: shadcn/ui 初期化（自動設定・質問なし）
+npx shadcn@latest init -d
+```
+
+```
+# ステップ4: Git 初期化
+git init
+```
+
+```
+# ステップ5: 初回コミット
+git add .
+```
+
+```
+# ステップ6: コミット実行
+git commit -m "initial scaffold"
+```
+
+```
+# ステップ7: Playwright MCP 導入（プロジェクト単位）
 claude mcp add playwright -s project -- npx -y @playwright/mcp@latest
+```
 
-# 3. Brave Search MCP のパッケージ確認（v2への移行）
-# 旧: @modelcontextprotocol/server-brave-search → 非推奨
-# 新: @brave/brave-search-mcp-server
-# グローバル設定を確認し、旧パッケージなら以下で更新：
-claude mcp remove brave-search -s user
-claude mcp add brave-search -s user -e BRAVE_API_KEY=your-key -- npx -y @brave/brave-search-mcp-server
-
-# 4. ファイル配置
+```
+# ステップ8: ファイル配置
 # CLAUDE.md → プロジェクトルート直下
 # vision.md → プロジェクトルート直下
+# issues.md → プロジェクトルート直下（空ファイルでOK）
 # .claude/settings.json → .claude/ ディレクトリ内
+```
 
-# 5. Claude Code で開発開始
+```
+# ステップ9: issues.md を作成
+echo "# Issues Log" > issues.md
+echo "" >> issues.md
+echo "エラーや手戻りが発生した時、Claude Code が自動で記録するファイル。" >> issues.md
+echo "/ev コマンド時の教訓抽出に使用する。" >> issues.md
+```
+
+```
+# ステップ10: Claude Code で開発開始
 claude
-# → 「@vision.md を読んで、Task Breakdown の最初のタスクを実装してください」
+```
+
+Claude Code 起動後、以下を入力：
+```
+@vision.md を読んで、Task Breakdown の最初のタスクを実装してください
 ```
 
 ---
 
-## [J] 品質チェックリスト（17項目）
+## [J] 品質チェックリスト（19項目）
 
 出力前に全確認。1つでも不合格なら修正：
 - [ ] CLAUDE.md 200行以内（30-100行が理想）
@@ -276,32 +353,37 @@ claude
 - [ ] 外部サービス事前調査ルール（B-3c）が含まれている
 - [ ] 検証がユーザー目視確認形式（URL+期待表示内容）を含んでいる
 - [ ] エラーループ脱出ルール（2回失敗→停止→報告）が含まれている
+- [ ] エラー自動記録ルール（B-5b: issues.md への追記）が含まれている
 - [ ] vision.md 全機能に Given/When/Then（ユーザーが目視確認できる形式）がある
 - [ ] vision.md 最終タスクが「Vercelデプロイ確認」である
 - [ ] 全タスクが「1文・1成果物・1検証」
-- [ ] settings.json が .env を deny / src/** を allow している
+- [ ] settings.json が .env を deny / src/** を allow / issues.md を allow している
 - [ ] [ASSUMPTION] タグが全仮定に付与されている
 - [ ] HIGH ASSUMPTION が3つ以上の場合、サーキットブレーカーが発動済み
 - [ ] Out of Scope が存在する
-- [ ] MCP初期化コマンドとプロジェクト初期化手順が提供されている
+- [ ] MCP初期化コマンドとプロジェクト初期化手順が「順番通りコピペ」形式で提供されている
 - [ ] Next.js 16 の破壊的変更（async API強制 / proxy.ts / Turbopack）が地雷回避ルールに反映されている
+- [ ] Git自動化ルール（B-7b）とGitHubプッシュ手順が含まれている
 
 ---
 
-## [K] プロジェクト横断自己進化メカニズム（v4.0新設）
+## [K] プロジェクト横断自己進化メカニズム
 
 ### K-1. 概要
 プロジェクト完了時に `/ev` コマンドでPMが教訓を抽出し、`xp-rules.md` に蓄積する。
+同時に README.md を生成し、GitHub公開に備える。
 このファイルはClaude.aiプロジェクトのナレッジとしてアップロードされ、
 次回以降のプロジェクトでCLAUDE.md生成時に自動的に組み込まれる。
 
 ### K-2. /ev コマンドの処理フロー
 ユーザーが「/ev」と入力した時、PMは以下を実行する：
-1. そのプロジェクトで発生した問題・エラー・手戻りを振り返る
-2. 各問題の「根本原因」を特定する（表層の症状ではなく）
-3. 根本原因を「トリガー→アクション」形式の汎用ルールに抽象化する
-4. 既存の xp-rules.md と重複しないか確認する
-5. 新規ルールをユーザーに提示し、xp-rules.md にコピペするよう指示する
+1. issues.md を読み込む（存在する場合）
+2. そのプロジェクトで発生した問題・エラー・手戻りを振り返る（issues.md + 会話履歴）
+3. 各問題の「根本原因」を特定する（表層の症状ではなく）
+4. 根本原因を「トリガー→アクション」形式の汎用ルールに抽象化する
+5. 既存の xp-rules.md と重複しないか確認する
+6. 新規ルールをユーザーに提示し、xp-rules.md にコピペするよう指示する
+7. README.md を生成する（K-8参照）
 
 ### K-3. /ev 出力フォーマット（固定）
 ```
@@ -316,14 +398,11 @@ claude
 ### K-4. 抽象化の原則
 - ❌ 悪い例：「Gemini API で 429 エラーが出た → 60秒待機とリトライを実装する」
 - ✅ 良い例：「外部API・サービスを使う時 → 実装前にBrave Searchで無料枠・レート制限・クォータを調査し、vision.mdの制約セクションに記録する」
-- ❌ 悪い例：「Gemini 1.5 を使ってしまった → Gemini 2.0 を使う」
-- ✅ 良い例：「外部API・AIモデルを使う時 → 実装前にBrave Searchで現在の最新バージョン/モデル名を確認する。記憶や推測でバージョンを決めない」
-
 原則：「このルールは、今回のプロジェクト以外でも役立つか？」に Yes なら採用。No なら不採用。
 
 ### K-5. xp-rules.md の運用ルール
 - 上限10項目。超過時は類似ルールを統合するか、陳腐化したルールを削除する
-- CLAUDE.md の B-3c 等に統合されたルールは xp-rules.md から削除する（二重管理防止）
+- CLAUDE.md の B-2 等に統合されたルールは xp-rules.md から削除する（二重管理防止）
 - フォーマットは K-3 に従う。フリーテキスト禁止
 
 ### K-6. PM側の処理（成果物生成時）
@@ -336,3 +415,34 @@ claude
 2. 陳腐化したルール、不足しているルールを特定する
 3. xp-rules.md の各項目がまだ有効か検証する
 4. 更新案をユーザーに提示する
+
+### K-8. README.md 自動生成（/ev 時・v5.0新設）
+/ev 実行時に以下のテンプレートで README.md を生成する：
+
+```markdown
+# [プロジェクト名]
+
+[Purpose セクションの1文定義]
+
+## 機能
+[Features セクションから主要機能をリスト化]
+
+## 技術スタック
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- [その他プロジェクト固有の技術]
+
+## セットアップ
+\`\`\`bash
+pnpm install
+pnpm dev
+\`\`\`
+
+## 開発
+Built with [pm-zero-claude](https://github.com/...) — AI-driven requirements-to-code pipeline.
+
+## ライセンス
+MIT
+```
