@@ -1,59 +1,89 @@
 # PM Zero
 
-**A requirements PM agent that turns vague ideas into Claude Code-ready specs — through structured interviews.**
+> A requirements PM agent that **gets smarter with every project you ship.**
 
-Built for non-engineers who want to ship software with AI, without writing a single line of code.
-
----
-
-## What is PM Zero?
-
-PM Zero is a Claude.ai Project configuration that acts as a product manager.
-
-You describe your idea in plain language. The PM Agent interviews you (15–40 questions), then generates 4 files that Claude Code needs to build your app autonomously.
-
-```
-Your idea  →  PM Agent interview  →  4 output files  →  Claude Code builds it
-```
-
-No technical background required.
+Non-engineers describe an idea. PM Zero interviews them, generates everything Claude Code needs to build it — and after each project, automatically distills lessons into rules that make the *next* project faster and more accurate.
 
 ---
 
-## How it works
+## The core idea: AI that learns from your projects
 
-### Step 1 — Set up the PM Agent in Claude.ai
+Most AI tools reset after every conversation. PM Zero doesn't.
 
-Create a new Claude.ai Project. Paste `custom-instructions-v4.0.txt` into Custom Instructions. Upload `pm-agent-knowledge-v4.0.md` and `xp-rules.md` as Knowledge files.
+Every time you finish a project, you run one command (`/ev`). The PM Agent reviews what went wrong during development — wrong assumptions, error loops, outdated APIs — and converts them into abstract, reusable rules. Those rules are saved to `xp-rules.md` and automatically embedded into the `CLAUDE.md` of every future project.
 
-### Step 2 — Describe your idea
+```
+Project 1 → ship → /ev → xp-rules.md (1 lesson)
+Project 2 → ship → /ev → xp-rules.md (3 lessons) → better CLAUDE.md
+Project 3 → ship → /ev → xp-rules.md (6 lessons) → even better CLAUDE.md
+                 ↑
+     Your accumulated experience as a non-engineer
+```
 
-Open the project and say what you want to build in 1–2 sentences. The PM Agent will ask clarifying questions across 4 stages: purpose, scope, behavior, and constraints.
+The rules aren't project-specific. The PM Agent is designed to abstract them:
 
-### Step 3 — Receive 4 output files
+| ❌ Too specific (discarded) | ✅ Abstracted (kept) |
+|---|---|
+| "Gemini API returned 429 error" | "Before using any external API → verify rate limits and free tier quotas with Brave Search" |
+| "Used Gemini 1.5 by mistake" | "Before using any AI model → confirm the current latest version; never rely on memory" |
 
-After the interview, the PM Agent generates:
+After 3–5 projects, `xp-rules.md` becomes a record of your real-world experience — and Claude Code stops making the mistakes you've already encountered.
 
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | Instructions for Claude Code — development rules, tech stack, guardrails |
-| `vision.md` | Full product spec — user stories, acceptance criteria, task breakdown |
-| `settings.json` | Claude Code permissions — blocks dangerous operations, scopes file access |
-| MCP setup command | Adds Playwright for browser-based verification |
+---
 
-### Step 4 — Start building
+## What PM Zero generates
+
+Describe your idea in plain language. The PM Agent runs a structured interview (15–40 questions across 4 stages), then outputs:
+
+| File | What it does |
+|------|-------------|
+| `CLAUDE.md` | Tells Claude Code exactly how to build — tech stack, guardrails, error recovery rules, your accumulated xp-rules |
+| `vision.md` | Full product spec — user stories, acceptance criteria, task breakdown, out-of-scope list |
+| `settings.json` | Permission boundaries — blocks `.env` access, `rm -rf`, force pushes; scopes writes to `src/` |
+| MCP setup command | Adds Playwright so Claude Code verifies UI in a real browser |
+
+---
+
+## How to use it
+
+### 1. Set up the PM Agent (one time)
+
+Create a Claude.ai Project. Configure it with three files:
+
+```
+Custom Instructions  ←  custom-instructions-v4.0.txt (paste full contents)
+Knowledge            ←  pm-agent-knowledge-v4.0.md
+Knowledge            ←  xp-rules.md
+```
+
+Install global MCPs once:
 
 ```bash
-# Create the project (run manually — do NOT ask Claude Code to do this)
+# Official docs lookup — prevents Claude Code from guessing API behavior
+claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest
+
+# Web search — for error resolution and external API research
+# Get a free key at brave.com/search/api/ (2,000 queries/month free)
+claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server
+```
+
+### 2. Describe your idea
+
+Open the Claude.ai Project and say what you want to build in 1–2 sentences. The PM Agent asks up to 40 questions across four stages — purpose, scope, behavior, constraints — then generates the 4 files above.
+
+### 3. Build
+
+```bash
+# Initialize project (run manually — do NOT delegate this to Claude Code)
 npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
 cd my-app
 npx shadcn@latest init
 git init && git add . && git commit -m "initial scaffold"
 
-# Add Playwright MCP (per project)
+# Add Playwright MCP (required per project)
 claude mcp add playwright -s project -- npx -y @playwright/mcp@latest
 
-# Launch Claude Code
+# Start Claude Code
 claude
 ```
 
@@ -62,86 +92,74 @@ First message to Claude Code:
 Read @vision.md and implement the first task in the Task Breakdown.
 ```
 
+### 4. Complete the loop — run `/ev` when the project ships
+
+In your Claude.ai PM Agent project, type `/ev`. The agent outputs lessons in this format:
+
+```
+## XP-[N]: [One-line title]
+- Situation:  what you were doing when the problem occurred
+- Symptom:    the concrete error or failure
+- Root cause: why it happened — abstracted to be reusable
+- Rule:       [trigger] → [action]
+```
+
+Paste the output into `xp-rules.md`. Re-upload to your Claude.ai project. Done — the next project starts smarter.
+
 ---
 
 ## Repository contents
 
 ```
 pm-zero/
-├── custom-instructions-v4.0.txt   # Paste into Claude.ai Project → Custom Instructions
-├── pm-agent-knowledge-v4.0.md     # Upload to Claude.ai Project → Knowledge
-├── xp-rules.md                    # Upload to Claude.ai Project → Knowledge (grows over time)
-└── pm-agent-manual.html           # Step-by-step user guide (open in browser)
+├── custom-instructions-v4.0.txt   # PM Agent behavior — paste into Claude.ai Custom Instructions
+├── pm-agent-knowledge-v4.0.md     # PM Agent knowledge base — upload to Claude.ai Knowledge
+├── xp-rules.md                    # Your accumulated lessons — upload to Claude.ai Knowledge
+└── pm-agent-manual.html           # Full step-by-step guide — open in browser
 ```
 
 ---
 
-## Tech stack assumption
+## Design decisions
 
-PM Zero is designed around the following stack. The PM Agent will confirm or adjust during the interview.
+**Why CLAUDE.md instead of a system prompt?**
+Claude Code injects `CLAUDE.md` as a conversation message, not a system prompt. PM Zero accounts for this — every rule is written as a concrete `trigger → action` pair, not abstract guidance, because vague instructions get ignored.
 
-- **Framework:** Next.js 16+ (App Router)
-- **Language:** TypeScript (strict)
-- **Styling:** Tailwind CSS v4
-- **UI components:** shadcn/ui
-- **Package manager:** pnpm
-- **Deployment:** Vercel
+**Why 1 task = 1 session?**
+Claude Code's attention quality degrades as context grows. Keeping sessions short and using `/compact` every 30 minutes maintains consistent output quality throughout a project.
 
----
-
-## MCPs used
-
-| MCP | Scope | Purpose |
-|-----|-------|---------|
-| Context7 | Global (install once) | Fetches official docs before implementing any library |
-| Brave Search | Global (install once) | Searches for errors, library choices, external API limits |
-| Playwright | Per project | Browser automation for UI verification |
-
-Install global MCPs once:
-
-```bash
-# Context7
-claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest
-
-# Brave Search (replace YOUR_API_KEY — free at brave.com/search/api/)
-claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server
-```
+**Why Playwright MCP for every project?**
+Claude Code's self-reporting is unreliable — it will say "done" when things are broken. Playwright forces verification in a real browser before a task is marked complete.
 
 ---
 
 ## Special commands
 
-| Command | When to use | What it does |
-|---------|------------|--------------|
-| `/ev` | Project complete | Extracts lessons learned → add to `xp-rules.md` |
-| `/audit` | Monthly | Checks knowledge base for outdated rules |
+| Command | When | What happens |
+|---------|------|-------------|
+| `/ev` | After each project ships | Extracts lessons → append to `xp-rules.md` → re-upload |
+| `/audit` | Monthly | PM Agent reviews knowledge base for outdated rules and proposes updates |
 
-### `/ev` — Cross-project self-improvement
+---
 
-After finishing a project, run `/ev` in the Claude.ai PM Agent project. The agent reviews what went wrong, abstracts root causes into reusable rules, and outputs them in this format:
+## Tech stack
 
-```
-## XP-[N]: [One-line title]
-- Situation: [what you were doing]
-- Symptom: [what broke]
-- Root cause: [why it happened — abstracted]
-- Rule: [trigger] → [action]
-```
+Next.js 16+ (App Router) · React 19 · TypeScript strict · Tailwind CSS v4 · pnpm · Vercel
 
-Paste the output into `xp-rules.md` (max 10 entries). Re-upload to your Claude.ai project. The next project's `CLAUDE.md` will automatically include these lessons.
+The PM Agent confirms or adjusts this during the interview.
 
 ---
 
 ## Error recovery
 
-If Claude Code gets stuck in a loop, paste this:
+If Claude Code loops on the same error more than twice, paste this:
 
 ```
 Stop. Follow these steps now:
 1. Save the current problem and every fix you've tried into progress.md
 2. Tell me to run /clear
 
-After /clear, start a new session and enter:
+After /clear, start a new session and type:
 "Read @progress.md and solve the problem using a different approach.
 Do not try any method you already attempted."
 ```
@@ -150,17 +168,9 @@ Do not try any method you already attempted."
 
 ## Who this is for
 
-- Non-engineers who want to build apps with Claude Code
-- People with product ideas but no coding background
-- Anyone frustrated by vague AI outputs that don't actually ship
-
----
-
-## User manual
-
-Open `pm-agent-manual.html` in your browser for the full step-by-step guide with copy-paste commands for every action.
-
-An English version (`pm-agent-manual-en.html`) is also available.
+- Non-engineers with product ideas and no coding background
+- Anyone who has tried Claude Code and gotten vague or broken outputs
+- People who want their AI tooling to improve over time, not reset with every chat
 
 ---
 
