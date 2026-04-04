@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMエージェント 行動手順書</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+    background: #F7F6F3;
+    color: #1a1a1a;
+    line-height: 1.7;
+    padding: 2rem 1rem 4rem;
+  }
+  .container { max-width: 780px; margin: 0 auto; }
+
+  h1 {
+    font-size: 22px; font-weight: 600; color: #111;
+    margin-bottom: 6px;
+  }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 2rem; }
+
+  .flow-bar {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 2rem;
+  }
+  .flow-chip {
+    font-size: 12px; font-weight: 500; padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .flow-arrow { font-size: 14px; color: #aaa; }
+
+  .phase-block { margin-bottom: 2.5rem; }
+  .phase-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: 12px; margin-bottom: 12px;
+  }
+  .phase-num {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+    padding: 3px 9px; border-radius: 20px; flex-shrink: 0;
+  }
+  .phase-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .phase-meta { font-size: 12px; opacity: 0.75; flex-shrink: 0; }
+
+  .ph-setup .phase-header { background: #E6F1FB; }
+  .ph-setup .phase-num { background: #185FA5; color: #fff; }
+  .ph-setup .phase-title { color: #0C447C; }
+
+  .ph-chat .phase-header { background: #E1F5EE; }
+  .ph-chat .phase-num { background: #0F6E56; color: #fff; }
+  .ph-chat .phase-title { color: #085041; }
+
+  .ph-dev .phase-header { background: #EEEDFE; }
+  .ph-dev .phase-num { background: #534AB7; color: #fff; }
+  .ph-dev .phase-title { color: #3C3489; }
+
+  .ph-daily .phase-header { background: #FAEEDA; }
+  .ph-daily .phase-num { background: #854F0B; color: #fff; }
+  .ph-daily .phase-title { color: #633806; }
+
+  .ph-complete .phase-header { background: #EAF3DE; }
+  .ph-complete .phase-num { background: #3B6D11; color: #fff; }
+  .ph-complete .phase-title { color: #27500A; }
+
+  .ph-maint .phase-header { background: #F1EFE8; }
+  .ph-maint .phase-num { background: #5F5E5A; color: #fff; }
+  .ph-maint .phase-title { color: #444441; }
+
+  .steps { display: flex; flex-direction: column; gap: 10px; }
+
+  .step {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .step-head {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 14px 16px; cursor: pointer; user-select: none;
+  }
+  .step-head:hover { background: #fafafa; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #f0f0f0; border: 1px solid #e0e0e0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #666;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-text { flex: 1; }
+  .step-label { font-size: 14px; font-weight: 600; color: #111; line-height: 1.4; }
+  .step-hint { font-size: 12px; color: #888; margin-top: 2px; line-height: 1.4; }
+  .step-toggle { font-size: 20px; color: #bbb; transition: transform 0.2s; flex-shrink: 0; line-height: 1; }
+  .step-toggle.open { transform: rotate(90deg); }
+
+  .step-body { padding: 0 16px 16px; display: none; }
+  .step-body.open { display: block; }
+
+  .note { font-size: 13px; color: #444; line-height: 1.7; margin-bottom: 10px; }
+  .note b { font-weight: 600; color: #111; }
+
+  .copy-block {
+    position: relative;
+    background: #F3F2EF;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 10px 80px 10px 12px;
+    margin: 8px 0;
+  }
+  .copy-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+    color: #999; text-transform: uppercase; margin-bottom: 5px;
+  }
+  .copy-code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12px; line-height: 1.6;
+    color: #222; white-space: pre-wrap; word-break: break-all;
+  }
+  .copy-btn {
+    position: absolute; top: 50%; right: 10px;
+    transform: translateY(-50%);
+    font-size: 11px; font-weight: 600;
+    padding: 5px 12px; border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fff; color: #555;
+    cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: #f0f0f0; }
+  .copy-btn.copied { color: #0F6E56; border-color: #5DCAA5; background: #E1F5EE; }
+
+  .warn-box {
+    background: #FAEEDA; border: 1px solid #EF9F27;
+    border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+    font-size: 13px; color: #633806; line-height: 1.6;
+  }
+  .warn-box b { font-weight: 600; }
+  .info-box {
+    background: #E6F1FB; border: 1px solid #85B7EB;
+    border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+    font-size: 13px; color: #0C447C; line-height: 1.6;
+  }
+  .info-box b { font-weight: 600; }
+  .tip-box {
+    background: #E1F5EE; border: 1px solid #5DCAA5;
+    border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+    font-size: 13px; color: #085041; line-height: 1.6;
+  }
+  .tip-box b { font-weight: 600; }
+
+  .stage-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+  .stage-item {
+    display: flex; align-items: center; gap: 10px;
+    background: #F7F6F3; border: 1px solid #e8e8e8;
+    border-radius: 8px; padding: 8px 12px;
+  }
+  .stage-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    color: #888; flex-shrink: 0; min-width: 55px;
+  }
+  .stage-desc { font-size: 13px; color: #333; }
+
+  .file-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+  .file-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 12px; background: #F7F6F3;
+    border: 1px solid #e8e8e8; border-radius: 8px;
+  }
+  .file-name {
+    font-family: monospace; font-size: 12px; color: #185FA5;
+    flex-shrink: 0; min-width: 110px;
+  }
+  .file-desc { font-size: 12px; color: #666; }
+
+  .footer-card {
+    margin-top: 1rem; padding: 16px;
+    background: #fff; border: 1px solid #e8e8e8; border-radius: 12px;
+  }
+  .footer-card-title { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 8px; }
+  .footer-card-body { font-size: 12px; color: #555; line-height: 1.8; }
+  code.inline {
+    font-size: 11px; background: #F3F2EF; padding: 1px 5px;
+    border-radius: 4px; border: 1px solid #e5e5e5;
+    font-family: monospace;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>PMエージェント 行動手順書</h1>
+  <p class="subtitle">v4.0 対応 ／ 非エンジニア向け完全ガイド</p>
+
+  <div class="flow-bar">
+    <span class="flow-chip" style="background:#E6F1FB;color:#0C447C;">PHASE 1 初期セットアップ</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#E1F5EE;color:#085041;">PHASE 2 インタビュー</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#EEEDFE;color:#3C3489;">PHASE 3 環境構築</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#FAEEDA;color:#633806;">PHASE 4 開発中</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#EAF3DE;color:#27500A;">PHASE 5 完了・保存</span>
+  </div>
+
+  <!-- PHASE 1 -->
+  <div class="phase-block ph-setup">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 1</span>
+      <span class="phase-title">初期セットアップ（最初の1回だけ）</span>
+      <span class="phase-meta">所要 30〜60分</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">Claude.ai でプロジェクトを作る</div>
+            <div class="step-hint">左サイドバーの「Projects」→「New Project」</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① claude.ai を開く<br>② 左サイドバーの <b>Projects</b> をクリック<br>③ <b>New Project</b> ボタンをクリック<br>④ プロジェクト名を入力（例：「PMエージェント」）して作成</p>
+          <div class="info-box">このプロジェクトが「PMエージェントの部屋」になります。アイデアを話しかけると、4つの設計書を自動生成してくれます。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">カスタム指示を設定する</div>
+            <div class="step-hint">プロジェクト設定 → Custom instructions に貼り付け</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① プロジェクト画面右上の <b>設定（歯車アイコン）</b> を開く<br>② <b>Custom instructions</b> 欄を見つける<br>③ お手元の <b>custom-instructions-v4.0.txt</b> をテキストエディタで開く<br>④ 全文をコピー（Ctrl+A → Ctrl+C）して貼り付け<br>⑤ <b>Save</b> をクリック</p>
+          <div class="warn-box"><b>注意：</b> 貼り付ける内容は custom-instructions-v4.0.txt の全文です。一部だけ貼り付けると動作しません。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">ナレッジファイルをアップロードする</div>
+            <div class="step-hint">pm-agent-knowledge-v4.0.md と xp-rules.md の2ファイル</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① プロジェクト設定の <b>Knowledge</b> セクションを開く<br>② <b>Add content</b> → <b>Upload files</b> をクリック<br>③ 以下の2ファイルを両方アップロードする</p>
+          <div class="copy-block">
+            <div class="copy-label">アップロードするファイル</div>
+            <div class="copy-code">pm-agent-knowledge-v4.0.md
+xp-rules.md</div>
+          </div>
+          <div class="tip-box">xp-rules.md は最初ほぼ空ですが、プロジェクトを重ねると教訓が蓄積されていきます。必ず両方アップロードしてください。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <div class="step-label">Claude Code をインストールする</div>
+            <div class="step-hint">ターミナルで2コマンド実行するだけ</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">ターミナル（Mac：Terminal アプリ ／ Windows：PowerShell）を開いて、以下を順番に実行します。</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 1：Node.js の確認</div>
+            <div class="copy-code">node --version</div>
+            <button class="copy-btn" onclick="copyText(this,'node --version')">コピー</button>
+          </div>
+          <p class="note">バージョン番号（例：v22.1.0）が表示されればOK。何も表示されない場合は <b>nodejs.org</b> からインストールしてください。</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 2：Claude Code のインストール</div>
+            <div class="copy-code">npm install -g @anthropic-ai/claude-code</div>
+            <button class="copy-btn" onclick="copyText(this,'npm install -g @anthropic-ai/claude-code')">コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">5</div>
+          <div class="step-text">
+            <div class="step-label">グローバル MCP を導入する（全プロジェクト共通）</div>
+            <div class="step-hint">Context7 と Brave Search は一度だけ設定</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">ターミナルで以下を1行ずつ実行します。</p>
+          <div class="copy-block">
+            <div class="copy-label">Context7 MCP（公式ドキュメント参照ツール）</div>
+            <div class="copy-code">claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest</div>
+            <button class="copy-btn" onclick="copyText(this,'claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest')">コピー</button>
+          </div>
+          <div class="copy-block">
+            <div class="copy-label">Brave Search MCP（Web検索ツール）※APIキーを差し替えて実行</div>
+            <div class="copy-code">claude mcp add brave-search -s user -e BRAVE_API_KEY=あなたのAPIキー -- npx -y @brave/brave-search-mcp-server</div>
+            <button class="copy-btn" onclick="copyText(this,'claude mcp add brave-search -s user -e BRAVE_API_KEY=あなたのAPIキー -- npx -y @brave/brave-search-mcp-server')">コピー</button>
+          </div>
+          <div class="warn-box">
+            <b>Brave Search APIキーの取得手順：</b><br>
+            ① <b>brave.com/search/api/</b> にアクセス<br>
+            ② 無料プランに登録（月2,000クエリ無料）<br>
+            ③ 発行されたAPIキーをコピーして、上のコマンドの「あなたのAPIキー」部分に置き換えて実行
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase-block ph-chat">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 2</span>
+      <span class="phase-title">PMエージェントにアイデアを話す（プロジェクトごと）</span>
+      <span class="phase-meta">所要 30分〜2時間</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">プロジェクトを開いてアイデアを伝える</div>
+            <div class="step-hint">「作りたいもの」を1〜2文で自由に話しかけるだけでOK</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Claude.ai の PMエージェントプロジェクトを開き、以下のように話しかけます：</p>
+          <div class="copy-block">
+            <div class="copy-label">例文（この形式でなくてもOK）</div>
+            <div class="copy-code">家計簿アプリを作りたい。収支を入力したら月ごとのグラフが見られるやつ。</div>
+            <button class="copy-btn" onclick="copyText(this,'家計簿アプリを作りたい。収支を入力したら月ごとのグラフが見られるやつ。')">コピー</button>
+          </div>
+          <div class="tip-box">PMエージェントは必ず「4つの成果物を生成します。まず質問します。」と宣言してからインタビューを始めます。いきなり設計書が出てきたら、それは正しい動作ではありません。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">インタビューに答える（15〜40問）</div>
+            <div class="step-hint">1ターン最大3問。選択肢から選ぶことが多い</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">PMエージェントは4段階に分けて質問します：</p>
+          <div class="stage-list">
+            <div class="stage-item"><span class="stage-tag">STAGE 1</span><span class="stage-desc">目的：何を作る？誰が使う？成功の定義は？</span></div>
+            <div class="stage-item"><span class="stage-tag">STAGE 2</span><span class="stage-desc">範囲：最小限の機能は？やらないことは？</span></div>
+            <div class="stage-item"><span class="stage-tag">STAGE 3</span><span class="stage-desc">振る舞い：各画面でどう動く？エラーは？</span></div>
+            <div class="stage-item"><span class="stage-tag">STAGE 4</span><span class="stage-desc">制約：外部サービスは？公開範囲は？</span></div>
+          </div>
+          <div class="info-box"><b>「わからない」はOKです。</b> PMエージェントが [ASSUMPTION: ...] と書いて仮決定してくれます。後から変更もできます。</div>
+          <div class="warn-box"><b>サーキットブレーカーについて：</b> 重要な未確定事項が3つ溜まると自動停止します。「スコープを縮小する」か「今ここで決める」かを選んでください。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">4つの設計書を受け取る</div>
+            <div class="step-hint">テキストをコピーしてファイルに保存する準備をする</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">インタビュー完了後、PMエージェントが以下の4つを出力します：</p>
+          <div class="file-list">
+            <div class="file-item"><span class="file-name">CLAUDE.md</span><span class="file-desc">Claude Codeへの指示書（開発ルール集）</span></div>
+            <div class="file-item"><span class="file-name">vision.md</span><span class="file-desc">プロダクト仕様書（機能・画面・タスク一覧）</span></div>
+            <div class="file-item"><span class="file-name">settings.json</span><span class="file-desc">Claude Codeの権限設定（危険操作の防止）</span></div>
+            <div class="file-item"><span class="file-name">MCP初期化コマンド</span><span class="file-desc">プロジェクト専用ツールの導入コマンド</span></div>
+          </div>
+          <p class="note">各ファイルの内容をコピーして、次のフェーズで実際のファイルとして保存します。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase-block ph-dev">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 3</span>
+      <span class="phase-title">開発環境を準備する（プロジェクトごと）</span>
+      <span class="phase-meta">所要 15〜30分</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">プロジェクトフォルダを作る</div>
+            <div class="step-hint">ターミナルで順番に実行（Claude Codeにやらせない）</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <div class="warn-box"><b>重要：</b> この手順はターミナルで手動実行します。Claude Codeに「フォルダを作って」と頼まないでください。</div>
+          <p class="note" style="margin-top:8px;"><b>my-app</b> の部分はお好みのプロジェクト名に変更OK（英数字とハイフンのみ）。</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 1：プロジェクト作成</div>
+            <div class="copy-code">npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"</div>
+            <button class="copy-btn" onclick='copyText(this,`npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"`)'>コピー</button>
+          </div>
+          <p class="note">途中でいくつか質問が出ます。すべて <b>Enter</b>（デフォルト）でOK。</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 2：フォルダに移動</div>
+            <div class="copy-code">cd my-app</div>
+            <button class="copy-btn" onclick="copyText(this,'cd my-app')">コピー</button>
+          </div>
+          <div class="copy-block">
+            <div class="copy-label">Step 3：UIコンポーネント初期化</div>
+            <div class="copy-code">npx shadcn@latest init</div>
+            <button class="copy-btn" onclick="copyText(this,'npx shadcn@latest init')">コピー</button>
+          </div>
+          <div class="copy-block">
+            <div class="copy-label">Step 4：最初のコミット</div>
+            <div class="copy-code">git init && git add . && git commit -m "initial scaffold"</div>
+            <button class="copy-btn" onclick='copyText(this,"git init && git add . && git commit -m \"initial scaffold\"")'>コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">設計書ファイルを配置する</div>
+            <div class="step-hint">PMエージェントが生成した内容をファイルに保存</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">PMエージェントが生成したテキストを、以下の場所にファイルとして保存します：</p>
+          <div class="file-list">
+            <div class="file-item"><span class="file-name">CLAUDE.md</span><span class="file-desc">→ my-app フォルダの直下に配置</span></div>
+            <div class="file-item"><span class="file-name">vision.md</span><span class="file-desc">→ my-app フォルダの直下に配置</span></div>
+            <div class="file-item"><span class="file-name">settings.json</span><span class="file-desc">→ my-app/.claude/ フォルダの中に配置</span></div>
+          </div>
+          <div class="info-box"><b>.claude フォルダが存在しない場合：</b><br>VSCode でプロジェクトを開き、新しいフォルダ「.claude」を作成し、その中に settings.json ファイルを作成してください。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">Playwright MCP を追加する</div>
+            <div class="step-hint">プロジェクトごとに必要。プロジェクトフォルダ内で実行</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">ターミナルで my-app フォルダに移動した状態で実行します：</p>
+          <div class="copy-block">
+            <div class="copy-label">Playwright MCP 追加（ブラウザ自動検証ツール）</div>
+            <div class="copy-code">claude mcp add playwright -s project -- npx -y @playwright/mcp@latest</div>
+            <button class="copy-btn" onclick="copyText(this,'claude mcp add playwright -s project -- npx -y @playwright/mcp@latest')">コピー</button>
+          </div>
+          <div class="tip-box">Playwright は Claude Code が「ブラウザを操作しながら動作確認する」ためのツールです。プロジェクトごとに追加が必要です。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <div class="step-label">Claude Code を起動して開発を開始する</div>
+            <div class="step-hint">ターミナルで claude と打つだけ</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">プロジェクトフォルダ（my-app）内で Claude Code を起動します：</p>
+          <div class="copy-block">
+            <div class="copy-label">Claude Code 起動</div>
+            <div class="copy-code">claude</div>
+            <button class="copy-btn" onclick="copyText(this,'claude')">コピー</button>
+          </div>
+          <p class="note" style="margin-top:8px;">起動したら、以下をそのままコピーして最初の指示として貼り付けます：</p>
+          <div class="copy-block">
+            <div class="copy-label">最初の指示（Claude Code への入力）</div>
+            <div class="copy-code">@vision.md を読んで、Task Breakdown の最初のタスクを実装してください</div>
+            <button class="copy-btn" onclick="copyText(this,'@vision.md を読んで、Task Breakdown の最初のタスクを実装してください')">コピー</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 4 -->
+  <div class="phase-block ph-daily">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 4</span>
+      <span class="phase-title">開発中のルール（毎セッション）</span>
+      <span class="phase-meta">重要度：高</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">1タスク = 1セッションを守る</div>
+            <div class="step-hint">1つ終わったら claude を終了、次のタスクで再起動</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <div class="info-box">Claude Code はセッションが長くなるほど「記憶の質」が落ちます。1つの機能の実装が完了したら、いったん終了して新しいセッションで次のタスクを始めてください。</div>
+          <div class="copy-block">
+            <div class="copy-label">次のタスクへ進む時の入力テンプレート</div>
+            <div class="copy-code">@vision.md を読んで、Task Breakdown の「（タスク名）」を実装してください</div>
+            <button class="copy-btn" onclick="copyText(this,'@vision.md を読んで、Task Breakdown の「（タスク名）」を実装してください')">コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">30分ごとに /compact を打つ</div>
+            <div class="step-hint">メモリ節約コマンド。長いセッションで必須</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">30分ほど作業が続いたら、Claude Code に以下を入力します：</p>
+          <div class="copy-block">
+            <div class="copy-label">メモリ圧縮コマンド</div>
+            <div class="copy-code">/compact</div>
+            <button class="copy-btn" onclick="copyText(this,'/compact')">コピー</button>
+          </div>
+          <div class="tip-box">これを打つと Claude が「今何をしているか」を整理して、残りのメモリを効率よく使えるようになります。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">実装された画面は必ず自分の目で確認する</div>
+            <div class="step-hint">「できました」という報告だけで信用しない</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <div class="warn-box"><b>重要：</b> Claude は「できました」と報告しても、実際に動いていないことがあります。必ずブラウザで <b>http://localhost:3000</b> を開いて、自分の目で確認してください。</div>
+          <p class="note" style="margin-top:8px;">開発サーバーを起動するには（別ターミナルで）：</p>
+          <div class="copy-block">
+            <div class="copy-label">開発サーバー起動</div>
+            <div class="copy-code">pnpm dev</div>
+            <button class="copy-btn" onclick="copyText(this,'pnpm dev')">コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <div class="step-label">エラーが3回以上続いたらエスケープカードを使う</div>
+            <div class="step-hint">同じエラーを何度も試させるのは逆効果</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">同じエラーが3回直らない場合、以下を Claude Code にそのままコピーして貼り付けてください：</p>
+          <div class="copy-block" style="border-color:#EF9F27; background:#FFFBF3;">
+            <div class="copy-label" style="color:#854F0B;">エスケープカード（エラーループ脱出）</div>
+            <div class="copy-code">ストップ。今から以下の手順を実行してください：
+1. 現在の問題と試した修正を progress.md に保存する
+2. 私に「/clear を実行してください」と伝える
+
+/clear 実行後、新しいセッションで以下を入力：
+「@progress.md を読んで、別のアプローチで問題を解決してください。前回と同じ方法は試さないでください。」</div>
+            <button class="copy-btn" onclick="copyEscape(this)">コピー</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">5</div>
+          <div class="step-text">
+            <div class="step-label">同じミスが繰り返されたら CLAUDE.md にルールを追加する</div>
+            <div class="step-hint">自己改善で再発を防ぐ</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Claude が同じ間違いをしたら、そのパターンを CLAUDE.md に追記するよう指示します：</p>
+          <div class="copy-block">
+            <div class="copy-label">ルール追加の指示テンプレート</div>
+            <div class="copy-code">今起きた「（問題の内容）」が二度と起きないよう、CLAUDE.md の最終行にルールを追加してください</div>
+            <button class="copy-btn" onclick="copyText(this,'今起きた「（問題の内容）」が二度と起きないよう、CLAUDE.md の最終行にルールを追加してください')">コピー</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 5 -->
+  <div class="phase-block ph-complete">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 5</span>
+      <span class="phase-title">プロジェクト完了時（教訓を蓄積する）</span>
+      <span class="phase-meta">次の開発をより良くするために</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">/ev コマンドで教訓を生成する</div>
+            <div class="step-hint">Claude.ai の PMエージェントプロジェクトで実行</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Claude.ai の PMエージェントプロジェクトを開いて、以下を入力：</p>
+          <div class="copy-block">
+            <div class="copy-label">教訓抽出コマンド</div>
+            <div class="copy-code">/ev</div>
+            <button class="copy-btn" onclick="copyText(this,'/ev')">コピー</button>
+          </div>
+          <p class="note" style="margin-top:8px;">PMエージェントが今回のプロジェクトで発生した問題・ミス・改善点を「XP-XX」形式のルールとして出力します。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">生成された教訓を xp-rules.md に追記する</div>
+            <div class="step-hint">テキストエディタで開いてコピペ</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① PMエージェントが出力したルール（XP-xx の形式）をコピー<br>② ローカルの <b>xp-rules.md</b> ファイルをテキストエディタで開く<br>③ 末尾に貼り付けて保存<br>④ 上限は10項目。超えたら古いものと統合する</p>
+          <div class="tip-box">xp-rules.md は「あなたのAI開発経験が蓄積される個人資産」です。プロジェクトを重ねるほど、次の開発がスムーズになります。</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">更新した xp-rules.md をプロジェクトに再アップロードする</div>
+            <div class="step-hint">古いファイルを削除 → 新しいファイルをアップロード</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① Claude.ai の PMエージェントプロジェクトを開く<br>② 設定（歯車）→ Knowledge を開く<br>③ 既存の <b>xp-rules.md</b> を削除<br>④ 更新した <b>xp-rules.md</b> を新たにアップロード</p>
+          <div class="info-box">これで次回のプロジェクトから、この教訓が自動的に CLAUDE.md に組み込まれるようになります。</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 6 -->
+  <div class="phase-block ph-maint">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 6</span>
+      <span class="phase-title">定期メンテナンス（月1回推奨）</span>
+      <span class="phase-meta">ナレッジの鮮度を保つ</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">/audit コマンドで陳腐化チェックをする</div>
+            <div class="step-hint">技術仕様の変化や古いルールを洗い出す</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Claude.ai の PMエージェントプロジェクトで月1回実行します：</p>
+          <div class="copy-block">
+            <div class="copy-label">定期監査コマンド</div>
+            <div class="copy-code">/audit</div>
+            <button class="copy-btn" onclick="copyText(this,'/audit')">コピー</button>
+          </div>
+          <p class="note" style="margin-top:8px;">PMエージェントが「古くなったルール」「追加すべきルール」を提案します。内容を確認して、必要なら pm-agent-knowledge-v4.0.md か xp-rules.md を更新してください。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 補足カード -->
+  <div class="footer-card">
+    <div class="footer-card-title">技術スタックを途中で変えたくなった場合</div>
+    <div class="footer-card-body">
+      ① 既存コードの移行は試みない（やり直した方が速い）<br>
+      ② vision.md はそのまま再利用できる（技術スタックに依存しない仕様書）<br>
+      ③ PMエージェントに「CLAUDE.md と settings.json だけ再生成して」と依頼する<br>
+      ④ <code class="inline">create-next-app</code> から新規プロジェクトとしてやり直す
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggle(head) {
+  const body = head.nextElementSibling;
+  const arrow = head.querySelector('.step-toggle');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ コピー済み';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ コピー済み';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyEscape(btn) {
+  const text = `ストップ。今から以下の手順を実行してください：\n1. 現在の問題と試した修正を progress.md に保存する\n2. 私に「/clear を実行してください」と伝える\n\n/clear 実行後、新しいセッションで以下を入力：\n「@progress.md を読んで、別のアプローチで問題を解決してください。前回と同じ方法は試さないでください。」`;
+  copyText(btn, text);
+}
+</script>
+</body>
+</html>

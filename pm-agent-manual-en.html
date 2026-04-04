@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Zero — User Manual</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #F7F6F3;
+    color: #1a1a1a;
+    line-height: 1.7;
+    padding: 2rem 1rem 4rem;
+  }
+  .container { max-width: 780px; margin: 0 auto; }
+
+  h1 { font-size: 22px; font-weight: 600; color: #111; margin-bottom: 6px; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 2rem; }
+
+  .flow-bar {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 2rem;
+  }
+  .flow-chip { font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+  .flow-arrow { font-size: 14px; color: #aaa; }
+
+  .phase-block { margin-bottom: 2.5rem; }
+  .phase-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: 12px; margin-bottom: 12px;
+  }
+  .phase-num {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+    padding: 3px 9px; border-radius: 20px; flex-shrink: 0;
+  }
+  .phase-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .phase-meta { font-size: 12px; opacity: 0.75; flex-shrink: 0; }
+
+  .ph-setup .phase-header { background: #E6F1FB; }
+  .ph-setup .phase-num { background: #185FA5; color: #fff; }
+  .ph-setup .phase-title { color: #0C447C; }
+
+  .ph-chat .phase-header { background: #E1F5EE; }
+  .ph-chat .phase-num { background: #0F6E56; color: #fff; }
+  .ph-chat .phase-title { color: #085041; }
+
+  .ph-dev .phase-header { background: #EEEDFE; }
+  .ph-dev .phase-num { background: #534AB7; color: #fff; }
+  .ph-dev .phase-title { color: #3C3489; }
+
+  .ph-daily .phase-header { background: #FAEEDA; }
+  .ph-daily .phase-num { background: #854F0B; color: #fff; }
+  .ph-daily .phase-title { color: #633806; }
+
+  .ph-complete .phase-header { background: #EAF3DE; }
+  .ph-complete .phase-num { background: #3B6D11; color: #fff; }
+  .ph-complete .phase-title { color: #27500A; }
+
+  .ph-maint .phase-header { background: #F1EFE8; }
+  .ph-maint .phase-num { background: #5F5E5A; color: #fff; }
+  .ph-maint .phase-title { color: #444441; }
+
+  .steps { display: flex; flex-direction: column; gap: 10px; }
+
+  .step {
+    background: #fff; border: 1px solid #e8e8e8;
+    border-radius: 12px; overflow: hidden;
+  }
+  .step-head {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 14px 16px; cursor: pointer; user-select: none;
+  }
+  .step-head:hover { background: #fafafa; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #f0f0f0; border: 1px solid #e0e0e0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #666;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-text { flex: 1; }
+  .step-label { font-size: 14px; font-weight: 600; color: #111; line-height: 1.4; }
+  .step-hint { font-size: 12px; color: #888; margin-top: 2px; line-height: 1.4; }
+  .step-toggle { font-size: 20px; color: #bbb; transition: transform 0.2s; flex-shrink: 0; line-height: 1; }
+  .step-toggle.open { transform: rotate(90deg); }
+
+  .step-body { padding: 0 16px 16px; display: none; }
+  .step-body.open { display: block; }
+
+  .note { font-size: 13px; color: #444; line-height: 1.7; margin-bottom: 10px; }
+  .note b { font-weight: 600; color: #111; }
+
+  .copy-block {
+    position: relative;
+    background: #F3F2EF; border: 1px solid #e5e5e5;
+    border-radius: 8px; padding: 10px 80px 10px 12px; margin: 8px 0;
+  }
+  .copy-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+    color: #999; text-transform: uppercase; margin-bottom: 5px;
+  }
+  .copy-code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12px; line-height: 1.6;
+    color: #222; white-space: pre-wrap; word-break: break-all;
+  }
+  .copy-btn {
+    position: absolute; top: 50%; right: 10px;
+    transform: translateY(-50%);
+    font-size: 11px; font-weight: 600;
+    padding: 5px 12px; border-radius: 6px;
+    border: 1px solid #ddd; background: #fff; color: #555;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .copy-btn:hover { background: #f0f0f0; }
+  .copy-btn.copied { color: #0F6E56; border-color: #5DCAA5; background: #E1F5EE; }
+
+  .warn-box {
+    background: #FAEEDA; border: 1px solid #EF9F27;
+    border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+    font-size: 13px; color: #633806; line-height: 1.6;
+  }
+  .warn-box b { font-weight: 600; }
+  .info-box {
+    background: #E6F1FB; border: 1px solid #85B7EB;
+    border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+    font-size: 13px; color: #0C447C; line-height: 1.6;
+  }
+  .info-box b { font-weight: 600; }
+  .tip-box {
+    background: #E1F5EE; border: 1px solid #5DCAA5;
+    border-radius: 8px; padding: 10px 12px; margin: 8px 0;
+    font-size: 13px; color: #085041; line-height: 1.6;
+  }
+  .tip-box b { font-weight: 600; }
+
+  .stage-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+  .stage-item {
+    display: flex; align-items: center; gap: 10px;
+    background: #F7F6F3; border: 1px solid #e8e8e8;
+    border-radius: 8px; padding: 8px 12px;
+  }
+  .stage-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    color: #888; flex-shrink: 0; min-width: 55px;
+  }
+  .stage-desc { font-size: 13px; color: #333; }
+
+  .file-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+  .file-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 12px; background: #F7F6F3;
+    border: 1px solid #e8e8e8; border-radius: 8px;
+  }
+  .file-name { font-family: monospace; font-size: 12px; color: #185FA5; flex-shrink: 0; min-width: 110px; }
+  .file-desc { font-size: 12px; color: #666; }
+
+  .footer-card {
+    margin-top: 1rem; padding: 16px;
+    background: #fff; border: 1px solid #e8e8e8; border-radius: 12px;
+  }
+  .footer-card-title { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 8px; }
+  .footer-card-body { font-size: 12px; color: #555; line-height: 1.8; }
+  code.inline {
+    font-size: 11px; background: #F3F2EF; padding: 1px 5px;
+    border-radius: 4px; border: 1px solid #e5e5e5; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>PM Zero — User Manual</h1>
+  <p class="subtitle">v4.0 Compatible &nbsp;/&nbsp; Complete Guide for Non-Engineers</p>
+
+  <div class="flow-bar">
+    <span class="flow-chip" style="background:#E6F1FB;color:#0C447C;">PHASE 1 Initial Setup</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#E1F5EE;color:#085041;">PHASE 2 Interview</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#EEEDFE;color:#3C3489;">PHASE 3 Dev Environment</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#FAEEDA;color:#633806;">PHASE 4 During Development</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-chip" style="background:#EAF3DE;color:#27500A;">PHASE 5 Wrap Up &amp; Save</span>
+  </div>
+
+  <!-- PHASE 1 -->
+  <div class="phase-block ph-setup">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 1</span>
+      <span class="phase-title">Initial Setup (one time only)</span>
+      <span class="phase-meta">Est. 30–60 min</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">Create a Project on Claude.ai</div>
+            <div class="step-hint">Left sidebar → "Projects" → "New Project"</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① Open claude.ai<br>② Click <b>Projects</b> in the left sidebar<br>③ Click <b>New Project</b><br>④ Enter a project name (e.g. "PM Agent") and create it</p>
+          <div class="info-box">This project becomes your "PM Agent room." Describe your idea here and it will automatically generate 4 spec files for you.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">Paste the custom instructions</div>
+            <div class="step-hint">Project settings → Custom instructions → paste the full file</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① Open the <b>settings (gear icon)</b> at the top-right of your project page<br>② Find the <b>Custom instructions</b> field<br>③ Open <b>custom-instructions-v4.0.txt</b> in a text editor<br>④ Select all (Ctrl+A → Ctrl+C) and paste it in<br>⑤ Click <b>Save</b></p>
+          <div class="warn-box"><b>Important:</b> You must paste the entire contents of custom-instructions-v4.0.txt. Pasting only part of it will cause incorrect behavior.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">Upload the knowledge files</div>
+            <div class="step-hint">Both pm-agent-knowledge-v4.0.md and xp-rules.md</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① Open the <b>Knowledge</b> section in project settings<br>② Click <b>Add content</b> → <b>Upload files</b><br>③ Upload both of the following files</p>
+          <div class="copy-block">
+            <div class="copy-label">Files to upload</div>
+            <div class="copy-code">pm-agent-knowledge-v4.0.md
+xp-rules.md</div>
+          </div>
+          <div class="tip-box">xp-rules.md starts nearly empty, but lessons from each project accumulate there over time. Make sure to upload both files.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <div class="step-label">Install Claude Code</div>
+            <div class="step-hint">Just run 2 commands in the terminal</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Open a terminal (Mac: Terminal app / Windows: PowerShell) and run the following in order.</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 1: Check Node.js</div>
+            <div class="copy-code">node --version</div>
+            <button class="copy-btn" onclick="copyText(this,'node --version')">Copy</button>
+          </div>
+          <p class="note">If a version number appears (e.g. v22.1.0) you're good. If nothing appears, install Node.js from <b>nodejs.org</b> first.</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 2: Install Claude Code</div>
+            <div class="copy-code">npm install -g @anthropic-ai/claude-code</div>
+            <button class="copy-btn" onclick="copyText(this,'npm install -g @anthropic-ai/claude-code')">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">5</div>
+          <div class="step-text">
+            <div class="step-label">Install global MCPs (shared across all projects)</div>
+            <div class="step-hint">Context7 and Brave Search — configure once, use everywhere</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Run each line below one at a time in your terminal.</p>
+          <div class="copy-block">
+            <div class="copy-label">Context7 MCP (official docs lookup tool)</div>
+            <div class="copy-code">claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest</div>
+            <button class="copy-btn" onclick="copyText(this,'claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest')">Copy</button>
+          </div>
+          <div class="copy-block">
+            <div class="copy-label">Brave Search MCP (web search tool) — replace YOUR_API_KEY before running</div>
+            <div class="copy-code">claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server</div>
+            <button class="copy-btn" onclick="copyText(this,'claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server')">Copy</button>
+          </div>
+          <div class="warn-box">
+            <b>How to get a Brave Search API key:</b><br>
+            ① Go to <b>brave.com/search/api/</b><br>
+            ② Sign up for the free plan (2,000 queries/month free)<br>
+            ③ Copy your API key and replace <code style="font-size:11px;background:rgba(0,0,0,0.08);padding:1px 4px;border-radius:3px;">YOUR_API_KEY</code> in the command above, then run it
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase-block ph-chat">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 2</span>
+      <span class="phase-title">Describe your idea to the PM Agent (per project)</span>
+      <span class="phase-meta">Est. 30 min – 2 hrs</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">Open the project and describe your idea</div>
+            <div class="step-hint">Just say what you want to build in 1–2 sentences — no special format needed</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Open your PM Agent project on Claude.ai and send a message like this:</p>
+          <div class="copy-block">
+            <div class="copy-label">Example message (any wording is fine)</div>
+            <div class="copy-code">I want to build a budget tracker app where I can log income and expenses and see a monthly graph.</div>
+            <button class="copy-btn" onclick="copyText(this,'I want to build a budget tracker app where I can log income and expenses and see a monthly graph.')">Copy</button>
+          </div>
+          <div class="tip-box">The PM Agent will always start by saying "I will generate 4 output files. Let me ask you some questions first." If spec files appear immediately without any questions, something is wrong.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">Answer the interview questions (15–40 questions)</div>
+            <div class="step-hint">Max 3 questions per turn. Most answers are multiple choice</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">The PM Agent interviews you in 4 stages:</p>
+          <div class="stage-list">
+            <div class="stage-item"><span class="stage-tag">STAGE 1</span><span class="stage-desc">Purpose: What are you building? Who uses it? What does success look like?</span></div>
+            <div class="stage-item"><span class="stage-tag">STAGE 2</span><span class="stage-desc">Scope: What are the minimum features? What's explicitly out of scope?</span></div>
+            <div class="stage-item"><span class="stage-tag">STAGE 3</span><span class="stage-desc">Behavior: How does each screen work? What happens on errors?</span></div>
+            <div class="stage-item"><span class="stage-tag">STAGE 4</span><span class="stage-desc">Constraints: External services? Deployment target? Access control?</span></div>
+          </div>
+          <div class="info-box"><b>"I don't know" is a valid answer.</b> The PM Agent will write [ASSUMPTION: ...] and make a provisional decision. You can change it later.</div>
+          <div class="warn-box"><b>About the circuit breaker:</b> If 3 high-impact unknowns accumulate, the interview pauses automatically. You'll be asked to either narrow the scope or resolve the unknowns before continuing.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">Receive the 4 output files</div>
+            <div class="step-hint">Copy the text and prepare to save each file locally</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">After the interview, the PM Agent generates these 4 files:</p>
+          <div class="file-list">
+            <div class="file-item"><span class="file-name">CLAUDE.md</span><span class="file-desc">Instructions for Claude Code (development rules)</span></div>
+            <div class="file-item"><span class="file-name">vision.md</span><span class="file-desc">Product spec (features, screens, task breakdown)</span></div>
+            <div class="file-item"><span class="file-name">settings.json</span><span class="file-desc">Claude Code permissions (prevents dangerous operations)</span></div>
+            <div class="file-item"><span class="file-name">MCP setup command</span><span class="file-desc">Command to add the project-specific tool (Playwright)</span></div>
+          </div>
+          <p class="note">Copy the content of each file and save them in the next phase.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 3 -->
+  <div class="phase-block ph-dev">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 3</span>
+      <span class="phase-title">Set up the development environment (per project)</span>
+      <span class="phase-meta">Est. 15–30 min</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">Create the project folder</div>
+            <div class="step-hint">Run these commands manually in the terminal — do NOT ask Claude Code to do this</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <div class="warn-box"><b>Important:</b> Run these steps manually in your terminal. Do not ask Claude Code to create the folder for you.</div>
+          <p class="note" style="margin-top:8px;">You can replace <b>my-app</b> with your preferred project name (letters, numbers, and hyphens only).</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 1: Create the project</div>
+            <div class="copy-code">npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"</div>
+            <button class="copy-btn" onclick='copyText(this,`npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"`)'>Copy</button>
+          </div>
+          <p class="note">A few prompts will appear — press <b>Enter</b> for all of them (accept defaults).</p>
+          <div class="copy-block">
+            <div class="copy-label">Step 2: Navigate into the folder</div>
+            <div class="copy-code">cd my-app</div>
+            <button class="copy-btn" onclick="copyText(this,'cd my-app')">Copy</button>
+          </div>
+          <div class="copy-block">
+            <div class="copy-label">Step 3: Initialize UI components</div>
+            <div class="copy-code">npx shadcn@latest init</div>
+            <button class="copy-btn" onclick="copyText(this,'npx shadcn@latest init')">Copy</button>
+          </div>
+          <div class="copy-block">
+            <div class="copy-label">Step 4: Initial commit</div>
+            <div class="copy-code">git init && git add . && git commit -m "initial scaffold"</div>
+            <button class="copy-btn" onclick='copyText(this,"git init && git add . && git commit -m \"initial scaffold\"")'>Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">Place the spec files in the project</div>
+            <div class="step-hint">Save each file the PM Agent generated to the correct location</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Save the text generated by the PM Agent as actual files in these locations:</p>
+          <div class="file-list">
+            <div class="file-item"><span class="file-name">CLAUDE.md</span><span class="file-desc">→ Place directly inside the my-app folder (root)</span></div>
+            <div class="file-item"><span class="file-name">vision.md</span><span class="file-desc">→ Place directly inside the my-app folder (root)</span></div>
+            <div class="file-item"><span class="file-name">settings.json</span><span class="file-desc">→ Place inside the my-app/.claude/ folder</span></div>
+          </div>
+          <div class="info-box"><b>If the .claude folder doesn't exist:</b><br>Open the project in VSCode, create a new folder named ".claude", then create settings.json inside it.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">Add the Playwright MCP</div>
+            <div class="step-hint">Required for every project — run inside the project folder</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Make sure your terminal is inside the my-app folder, then run:</p>
+          <div class="copy-block">
+            <div class="copy-label">Add Playwright MCP (browser automation tool)</div>
+            <div class="copy-code">claude mcp add playwright -s project -- npx -y @playwright/mcp@latest</div>
+            <button class="copy-btn" onclick="copyText(this,'claude mcp add playwright -s project -- npx -y @playwright/mcp@latest')">Copy</button>
+          </div>
+          <div class="tip-box">Playwright lets Claude Code control a real browser to verify that your UI actually works. It must be added for each new project.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <div class="step-label">Launch Claude Code and start building</div>
+            <div class="step-hint">Just type claude in the terminal</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">While inside the project folder (my-app), launch Claude Code:</p>
+          <div class="copy-block">
+            <div class="copy-label">Launch Claude Code</div>
+            <div class="copy-code">claude</div>
+            <button class="copy-btn" onclick="copyText(this,'claude')">Copy</button>
+          </div>
+          <p class="note" style="margin-top:8px;">Once it starts, paste this as your first message:</p>
+          <div class="copy-block">
+            <div class="copy-label">First instruction (paste into Claude Code)</div>
+            <div class="copy-code">Read @vision.md and implement the first task in the Task Breakdown.</div>
+            <button class="copy-btn" onclick="copyText(this,'Read @vision.md and implement the first task in the Task Breakdown.')">Copy</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 4 -->
+  <div class="phase-block ph-daily">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 4</span>
+      <span class="phase-title">Rules during development (every session)</span>
+      <span class="phase-meta">Priority: High</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">One task = one session</div>
+            <div class="step-hint">Finish a task, exit claude, then restart for the next one</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <div class="info-box">Claude Code's memory quality degrades as sessions grow longer. Once a feature is complete, exit and start a fresh session for the next task.</div>
+          <div class="copy-block">
+            <div class="copy-label">Template for starting the next task</div>
+            <div class="copy-code">Read @vision.md and implement the "(task name)" task in the Task Breakdown.</div>
+            <button class="copy-btn" onclick="copyText(this,'Read @vision.md and implement the \"(task name)\" task in the Task Breakdown.')">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">Run /compact every 30 minutes</div>
+            <div class="step-hint">Memory compression — essential for longer sessions</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">After about 30 minutes of work, type the following in Claude Code:</p>
+          <div class="copy-block">
+            <div class="copy-label">Memory compression command</div>
+            <div class="copy-code">/compact</div>
+            <button class="copy-btn" onclick="copyText(this,'/compact')">Copy</button>
+          </div>
+          <div class="tip-box">This causes Claude to summarize what it's been doing, freeing up memory for the rest of the session.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">Always verify the result in your own browser</div>
+            <div class="step-hint">Never trust "it's done" without checking yourself</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <div class="warn-box"><b>Important:</b> Claude may say "done" even when things aren't working. Always open <b>http://localhost:3000</b> in your browser and confirm with your own eyes.</div>
+          <p class="note" style="margin-top:8px;">To start the dev server (in a separate terminal window):</p>
+          <div class="copy-block">
+            <div class="copy-label">Start dev server</div>
+            <div class="copy-code">pnpm dev</div>
+            <button class="copy-btn" onclick="copyText(this,'pnpm dev')">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <div class="step-label">If an error persists 3+ times, use the Escape Card</div>
+            <div class="step-hint">Retrying the same fix over and over makes things worse</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">If the same error hasn't been resolved after 3 attempts, paste this directly into Claude Code:</p>
+          <div class="copy-block" style="border-color:#EF9F27; background:#FFFBF3;">
+            <div class="copy-label" style="color:#854F0B;">Escape Card (break out of error loops)</div>
+            <div class="copy-code">Stop. Follow these steps now:
+1. Save the current problem and every fix you've tried into progress.md
+2. Tell me to run /clear
+
+After /clear, start a new session and enter:
+"Read @progress.md and solve the problem using a different approach. Do not try any method you already attempted."</div>
+            <button class="copy-btn" onclick="copyEscape(this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">5</div>
+          <div class="step-text">
+            <div class="step-label">Add a rule to CLAUDE.md whenever a mistake recurs</div>
+            <div class="step-hint">Self-improvement to prevent the same error happening again</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">When Claude repeats the same mistake, instruct it to add a prevention rule to CLAUDE.md:</p>
+          <div class="copy-block">
+            <div class="copy-label">Rule-addition instruction template</div>
+            <div class="copy-code">To prevent "(describe the problem)" from happening again, add a rule to the last line of CLAUDE.md.</div>
+            <button class="copy-btn" onclick="copyText(this,'To prevent \"(describe the problem)\" from happening again, add a rule to the last line of CLAUDE.md.')">Copy</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 5 -->
+  <div class="phase-block ph-complete">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 5</span>
+      <span class="phase-title">When a project is complete (capture lessons learned)</span>
+      <span class="phase-meta">Makes your next project smoother</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">Run /ev to generate lessons learned</div>
+            <div class="step-hint">Run this in your Claude.ai PM Agent project</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Open your Claude.ai PM Agent project and type:</p>
+          <div class="copy-block">
+            <div class="copy-label">Lesson extraction command</div>
+            <div class="copy-code">/ev</div>
+            <button class="copy-btn" onclick="copyText(this,'/ev')">Copy</button>
+          </div>
+          <p class="note" style="margin-top:8px;">The PM Agent reviews problems, mistakes, and improvements from this project and outputs them as "XP-XX" format rules.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <div class="step-label">Append the generated rules to xp-rules.md</div>
+            <div class="step-hint">Open the file in a text editor and paste at the bottom</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① Copy the rules the PM Agent output (in XP-xx format)<br>② Open your local <b>xp-rules.md</b> in a text editor<br>③ Paste at the end of the file and save<br>④ Max 10 entries — merge or remove older ones if you exceed the limit</p>
+          <div class="tip-box">xp-rules.md is your personal asset — accumulated AI development experience. Each project makes the next one faster and smoother.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <div class="step-label">Re-upload the updated xp-rules.md to your project</div>
+            <div class="step-hint">Delete the old file → upload the new one</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">① Open your Claude.ai PM Agent project<br>② Go to Settings (gear icon) → Knowledge<br>③ Delete the existing <b>xp-rules.md</b><br>④ Upload the updated <b>xp-rules.md</b></p>
+          <div class="info-box">From your next project onward, these lessons will be automatically embedded into every CLAUDE.md the PM Agent generates.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PHASE 6 -->
+  <div class="phase-block ph-maint">
+    <div class="phase-header">
+      <span class="phase-num">PHASE 6</span>
+      <span class="phase-title">Routine maintenance (recommended monthly)</span>
+      <span class="phase-meta">Keep your knowledge base fresh</span>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-head" onclick="toggle(this)">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <div class="step-label">Run /audit to check for outdated rules</div>
+            <div class="step-hint">Surfaces stale rules and missing updates caused by tech changes</div>
+          </div>
+          <div class="step-toggle">›</div>
+        </div>
+        <div class="step-body">
+          <p class="note">Run this once a month in your Claude.ai PM Agent project:</p>
+          <div class="copy-block">
+            <div class="copy-label">Audit command</div>
+            <div class="copy-code">/audit</div>
+            <button class="copy-btn" onclick="copyText(this,'/audit')">Copy</button>
+          </div>
+          <p class="note" style="margin-top:8px;">The PM Agent will propose "rules that are now outdated" and "rules that should be added." Review the suggestions and update pm-agent-knowledge-v4.0.md or xp-rules.md as needed.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer card -->
+  <div class="footer-card">
+    <div class="footer-card-title">If you want to change the tech stack mid-project</div>
+    <div class="footer-card-body">
+      ① Do not attempt to migrate existing code — starting over is faster<br>
+      ② vision.md can be reused as-is (it's tech-stack agnostic)<br>
+      ③ Ask the PM Agent to "regenerate only CLAUDE.md and settings.json"<br>
+      ④ Start fresh from <code class="inline">create-next-app</code> as a new project
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggle(head) {
+  const body = head.nextElementSibling;
+  const arrow = head.querySelector('.step-toggle');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyEscape(btn) {
+  const text = `Stop. Follow these steps now:\n1. Save the current problem and every fix you've tried into progress.md\n2. Tell me to run /clear\n\nAfter /clear, start a new session and enter:\n"Read @progress.md and solve the problem using a different approach. Do not try any method you already attempted."`;
+  copyText(btn, text);
+}
+</script>
+</body>
+</html>
