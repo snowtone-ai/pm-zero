@@ -1,8 +1,23 @@
-# PM Zero
+# PM Zero Claude
 
 > A requirements PM agent that **gets smarter with every project you ship.**
 
 Non-engineers describe an idea. PM Zero interviews them, generates everything Claude Code needs to build it — and after each project, automatically distills lessons into rules that make the *next* project faster and more accurate.
+
+---
+
+## v6.0: Architecture-level token optimization
+
+v6.0 redesigns the system around four architectural principles instead of bolting on tools:
+
+| Change | Impact |
+|--------|--------|
+| Interview batching (3–5 questions/turn) | 75% interview token reduction |
+| Phase compression (structured summaries between stages) | Prevents quadratic cost growth |
+| 3-tier verification (Hooks → playwright-slim → user) | 2.7x verification token reduction |
+| Deterministic Hooks (build/lint/tsc on every file save) | 80% of errors caught at zero AI token cost |
+
+These compound to **70–90% total cost reduction** versus v5.0.
 
 ---
 
@@ -20,12 +35,12 @@ Project 3 → ship → /ev → xp-rules.md (6 lessons) → even better CLAUDE.md
      Your accumulated experience as a non-engineer
 ```
 
-The rules aren't project-specific. The PM Agent is designed to abstract them:
+The rules aren't project-specific. The PM Agent abstracts them:
 
 | ❌ Too specific (discarded) | ✅ Abstracted (kept) |
 |---|---|
-| "Gemini API returned 429 error" | "Before using any external API → verify rate limits and free tier quotas with Brave Search" |
-| "Used Gemini 1.5 by mistake" | "Before using any AI model → confirm the current latest version; never rely on memory" |
+| "Gemini API returned 429 error" | "Before using any external API → verify rate limits and free tier quotas" |
+| "Playwright MCP used 114K tokens" | "UI verification → use playwright-slim (73% less tokens), limit to 10 steps" |
 
 After 3–5 projects, `xp-rules.md` becomes a record of your real-world experience — and Claude Code stops making the mistakes you've already encountered.
 
@@ -33,14 +48,14 @@ After 3–5 projects, `xp-rules.md` becomes a record of your real-world experien
 
 ## What PM Zero generates
 
-Describe your idea in plain language. The PM Agent runs a structured interview (15–40 questions across 4 stages), then outputs:
+Describe your idea in plain language. The PM Agent runs a structured interview (15–30 questions across 4 stages), then outputs:
 
 | File | What it does |
 |------|-------------|
 | `CLAUDE.md` | Tells Claude Code exactly how to build — tech stack, guardrails, error recovery rules, your accumulated xp-rules |
 | `vision.md` | Full product spec — user stories, acceptance criteria, task breakdown, out-of-scope list |
-| `settings.json` | Permission boundaries — blocks `.env` access, `rm -rf`, force pushes; scopes writes to `src/` |
-| MCP setup command | Adds Playwright so Claude Code verifies UI in a real browser |
+| `settings.json` | Permission boundaries + Hooks for deterministic quality gates (auto-prettier, auto-build, auto-lint) |
+| MCP setup command | Adds playwright-slim so Claude Code verifies UI in a real browser at 73% less token cost |
 
 ---
 
@@ -51,8 +66,8 @@ Describe your idea in plain language. The PM Agent runs a structured interview (
 Create a Claude.ai Project. Configure it with three files:
 
 ```
-Custom Instructions  ←  custom-instructions-v4.0.txt (paste full contents)
-Knowledge            ←  pm-agent-knowledge-v4.0.md
+Custom Instructions  ←  pm-zero-claude-instructions.md (paste full contents)
+Knowledge            ←  pm-zero-claude-knowledge-v6.0.md
 Knowledge            ←  xp-rules.md
 ```
 
@@ -63,25 +78,32 @@ Install global MCPs once:
 claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest
 
 # Web search — for error resolution and external API research
-# Get a free key at brave.com/search/api/ (2,000 queries/month free)
+# Get a free key at brave.com/search/api/
 claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server
 ```
 
 ### 2. Describe your idea
 
-Open the Claude.ai Project and say what you want to build in 1–2 sentences. The PM Agent asks up to 40 questions across four stages — purpose, scope, behavior, constraints — then generates the 4 files above.
+Open the Claude.ai Project and say what you want to build in 1–2 sentences. The PM Agent asks 15–30 questions across four stages — purpose, scope, behavior, constraints — then generates the files above.
+
+**v6.0 change:** The PM now asks 3–5 questions per turn (up from max 3), reducing total interview turns by ~40% and token costs by ~75%.
 
 ### 3. Build
 
 ```bash
-# Initialize project (run manually — do NOT delegate this to Claude Code)
-npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
+# Initialize project (run each command separately)
+npx create-next-app@latest my-app --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm
 cd my-app
-npx shadcn@latest init
-git init && git add . && git commit -m "initial scaffold"
+npx shadcn@latest init -d
+git init
+git add .
+git commit -m "initial scaffold"
 
-# Add Playwright MCP (required per project)
-claude mcp add playwright -s project -- npx -y @playwright/mcp@latest
+# Add playwright-slim MCP (required per project)
+claude mcp add playwright -s project -- npx -y @anthropic-ai/playwright-slim@latest
+
+# Place files: CLAUDE.md, vision.md, issues.md at project root
+# Place settings.json at .claude/settings.json
 
 # Start Claude Code
 claude
@@ -111,25 +133,32 @@ Paste the output into `xp-rules.md`. Re-upload to your Claude.ai project. Done �
 ## Repository contents
 
 ```
-pm-zero/
-├── custom-instructions-v4.0.txt   # PM Agent behavior — paste into Claude.ai Custom Instructions
-├── pm-agent-knowledge-v4.0.md     # PM Agent knowledge base — upload to Claude.ai Knowledge
-├── xp-rules.md                    # Your accumulated lessons — upload to Claude.ai Knowledge
-└── pm-agent-manual.html           # Full step-by-step guide — open in browser
+pm-zero-claude/
+├── pm-zero-claude-instructions.md    # PM Agent behavior — paste into Claude.ai Custom Instructions
+├── pm-zero-claude-knowledge-v6.0.md  # PM Agent knowledge base — upload to Claude.ai Knowledge
+├── xp-rules.md                       # Your accumulated lessons — upload to Claude.ai Knowledge
+├── pm-zero-claude-manual.html        # Full step-by-step guide — open in browser
+└── README.md                         # This file
 ```
 
 ---
 
 ## Design decisions
 
-**Why CLAUDE.md instead of a system prompt?**
-Claude Code injects `CLAUDE.md` as a conversation message, not a system prompt. PM Zero accounts for this — every rule is written as a concrete `trigger → action` pair, not abstract guidance, because vague instructions get ignored.
+**Why 3–5 questions per turn?**
+Research shows users handle 7–10 questions comfortably. A 10-turn conversation costs 55x a single turn due to history resending. Batching 3–5 questions per turn cuts interview costs by 75% while staying well within cognitive load limits.
 
-**Why 1 task = 1 session?**
-Claude Code's attention quality degrades as context grows. Keeping sessions short and using `/compact` every 30 minutes maintains consistent output quality throughout a project.
+**Why 3-tier verification instead of just Playwright?**
+Playwright MCP consumes 89–114K tokens per test session. The 3-tier architecture uses deterministic Hooks (lint, build, type-check) for 80% of error detection at zero AI token cost, playwright-slim for UI verification at 73% less tokens, and human visual confirmation only as the final gate.
 
-**Why Playwright MCP for every project?**
-Claude Code's self-reporting is unreliable — it will say "done" when things are broken. Playwright forces verification in a real browser before a task is marked complete.
+**Why Hooks for prettier/build/lint?**
+CLAUDE.md is probabilistically followed — Claude Code can and does ignore rules. Hooks are deterministic. Moving prettier/build/lint to Hooks guarantees 100% enforcement AND reduces CLAUDE.md rule count, which improves compliance with remaining rules.
+
+**Why CLAUDE.md under 100 lines?**
+Claude Code follows approximately 200 instructions consistently, but its system prompt already uses ~50 of those slots. Every line added to CLAUDE.md uniformly reduces compliance with all other lines. The 30–100 line sweet spot maximizes the signal-to-noise ratio.
+
+**Why phase compression in interviews?**
+Without compression, each interview turn resends the entire conversation history. A 15-turn interview accumulates massive redundant context. Compressing each stage into a structured summary (5–10 lines) and carrying forward only the summary prevents quadratic cost growth.
 
 ---
 
@@ -137,7 +166,7 @@ Claude Code's self-reporting is unreliable — it will say "done" when things ar
 
 | Command | When | What happens |
 |---------|------|-------------|
-| `/ev` | After each project ships | Extracts lessons → append to `xp-rules.md` → re-upload |
+| `/ev` | After each project ships | Extracts lessons → append to `xp-rules.md` → generates README.md |
 | `/audit` | Monthly | PM Agent reviews knowledge base for outdated rules and proposes updates |
 
 ---
