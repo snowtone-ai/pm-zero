@@ -1,208 +1,213 @@
 # PM Zero Claude
 
-> A requirements PM agent that **gets smarter with every project you ship.**
-
-Non-engineers describe an idea. PM Zero interviews them, generates everything Claude Code needs to build it — and after each project, automatically distills lessons into rules that make the *next* project faster and more accurate.
-
----
-
-## v6.0: Architecture-level token optimization
-
-v6.0 redesigns the system around four architectural principles instead of bolting on tools:
-
-| Change | Impact |
-|--------|--------|
-| Interview batching (3–5 questions/turn) | 75% interview token reduction |
-| Phase compression (structured summaries between stages) | Prevents quadratic cost growth |
-| 3-tier verification (Hooks → playwright-slim → user) | 2.7x verification token reduction |
-| Deterministic Hooks (build/lint/tsc on every file save) | 80% of errors caught at zero AI token cost |
-
-These compound to **70–90% total cost reduction** versus v5.0.
+**非エンジニアのアイデアを、Claude Code が自律実行できる仕様書セットに変換する AI 要件定義エージェント。
+プロジェクトを完了するたびに、自分自身のルールを更新して精度を上げていく。**
 
 ---
 
-## The core idea: AI that learns from your projects
+## なぜ作ったか
 
-Most AI tools reset after every conversation. PM Zero doesn't.
+Claude Code などの AI コーディングツールは、入力の質に出力の質が完全に依存する。
+曖昧な指示を与えれば曖昧なコードが出る。同じツールを使っても、使い方次第で成果に 10 倍の差が生まれる。
 
-Every time you finish a project, you run one command (`/ev`). The PM Agent reviews what went wrong during development — wrong assumptions, error loops, outdated APIs — and converts them into abstract, reusable rules. Those rules are saved to `xp-rules.md` and automatically embedded into the `CLAUDE.md` of every future project.
+この問題の根本は「要件定義の標準化」がないことだ。
+
+PM Zero Claude は、**誰が使っても同じ品質の仕様書セットが出力される仕組み**を設計した。
+インタビュー → 5 成果物生成 → 実装 → 教訓抽出 → 次回に反映、というサイクルを自動化している。
+
+---
+
+## 仕組みの全体像
 
 ```
-Project 1 → ship → /ev → xp-rules.md (1 lesson)
-Project 2 → ship → /ev → xp-rules.md (3 lessons) → better CLAUDE.md
-Project 3 → ship → /ev → xp-rules.md (6 lessons) → even better CLAUDE.md
-                 ↑
-     Your accumulated experience as a non-engineer
+ユーザーのアイデア（自然言語）
+        ↓
+  構造化インタビュー（4 ステージ / 15〜30 問）
+        ↓
+  5 成果物を自動生成
+  ┌─────────────────────────────────┐
+  │ CLAUDE.md   ← Claude Code への行動規範  │
+  │ vision.md   ← 仕様・受入基準・タスク分解 │
+  │ settings.json ← 権限制御 + 品質ゲート   │
+  │ MCP 初期化コマンド                       │
+  │ issues.md   ← エラーログの自動記録先     │
+  └─────────────────────────────────┘
+        ↓
+  Claude Code が自律実装
+        ↓
+  /ev コマンド → 教訓を抽出 → xp-rules.md に蓄積
+        ↓
+  次のプロジェクトの CLAUDE.md に自動反映
 ```
 
-The rules aren't project-specific. The PM Agent abstracts them:
+---
 
-| ❌ Too specific (discarded) | ✅ Abstracted (kept) |
+## コアコンセプト：仕組みが自己進化する
+
+ほとんどの AI ツールは会話が終わるとリセットされる。PM Zero Claude は違う。
+
+プロジェクト完了時に `/ev` コマンドを実行すると、AI エージェントがそのプロジェクトで発生したエラーや手戻りを振り返り、**再発防止ルールを自動抽出**する。
+
+```
+## XP-1: Playwright MCP のトークン膨張
+
+- 発生状況: UI 検証のたびに Playwright MCP でブラウザ操作を実行していた
+- 表層の症状: 1 テストで 89〜114K トークン消費。コンテキスト使用率が急増
+- 根本原因: MCP はツールスキーマをコンテキストにインライン展開するため大量トークンを消費する
+- ルール: UI 検証時 → playwright-slim（73% スキーマ削減）を使い、10 ステップ以内に制限する
+```
+
+このルールは `xp-rules.md` に蓄積され、次回以降のプロジェクトで生成される `CLAUDE.md` に自動組み込みされる。
+
+```
+Project 1 → 完了 → /ev → xp-rules.md（1 件）
+Project 2 → 完了 → /ev → xp-rules.md（3 件）→ より精度の高い CLAUDE.md
+Project 3 → 完了 → /ev → xp-rules.md（6 件）→ さらに精度が上がる
+                    ↑
+         プロジェクトを重ねるたびに蓄積される実践知
+```
+
+抽出されるルールは「今回のプロジェクト固有の対症療法」ではなく、**次のプロジェクトでも通用する抽象化されたルール**にすることが原則だ。
+
+| ❌ 棄却（具体的すぎる） | ✅ 採用（抽象化済み） |
 |---|---|
-| "Gemini API returned 429 error" | "Before using any external API → verify rate limits and free tier quotas" |
-| "Playwright MCP used 114K tokens" | "UI verification → use playwright-slim (73% less tokens), limit to 10 steps" |
-
-After 3–5 projects, `xp-rules.md` becomes a record of your real-world experience — and Claude Code stops making the mistakes you've already encountered.
+| Gemini API で 429 エラーが出た → 60 秒待機 | 外部 API 使用前 → 無料枠・レート制限・クォータを必ず調査する |
+| Playwright が重かった → playwright-slim に変える | UI 検証 → playwright-slim で 10 ステップ以内に制限し、再利用可能なテストを生成する |
 
 ---
 
-## What PM Zero generates
+## 設計思想
 
-Describe your idea in plain language. The PM Agent runs a structured interview (15–30 questions across 4 stages), then outputs:
+### 1. 確率的遵守と確定的強制の分離
 
-| File | What it does |
-|------|-------------|
-| `CLAUDE.md` | Tells Claude Code exactly how to build — tech stack, guardrails, error recovery rules, your accumulated xp-rules |
-| `vision.md` | Full product spec — user stories, acceptance criteria, task breakdown, out-of-scope list |
-| `settings.json` | Permission boundaries + Hooks for deterministic quality gates (auto-prettier, auto-build, auto-lint) |
-| MCP setup command | Adds playwright-slim so Claude Code verifies UI in a real browser at 73% less token cost |
+AI に「必ずやれ」と指示文書に書いても、AI は確率的にしか従わない。
+PM Zero Claude はルールを 2 種類に分類し、それぞれ適切な強制手段を選ぶ。
 
----
+| ルールの種類 | 強制手段 | 遵守率 |
+|---|---|---|
+| 判断を伴うルール（設計方針、エラー対応）| CLAUDE.md（指示文書） | 確率的 |
+| 判断不要な機械的ルール（フォーマット、ビルド確認）| Hooks（自動実行スクリプト） | 100% |
 
-## How to use it
+ファイル保存のたびに Hooks が自動で `prettier` / `build` / `lint` を実行することで、
+AI のトークンをゼロ消費で 80% のエラーを検知できる。
 
-### 1. Set up the PM Agent (one time)
+### 2. CLAUDE.md の行数制限による遵守率最大化
 
-Create a Claude.ai Project. Configure it with three files:
+Claude Code はシステムプロンプトに約 200 命令の実効上限がある。
+ルールを 1 行追加するたびに、全ルールの遵守率が均一に低下する。
 
-```
-Custom Instructions  ←  pm-zero-claude-instructions.md (paste full contents)
-Knowledge            ←  pm-zero-claude-knowledge-v6.0.md
-Knowledge            ←  xp-rules.md
-```
+PM Zero Claude は CLAUDE.md を 30〜100 行に抑える設計にしている。
+機械的に強制できるルールは Hooks に移し、残ったルールの遵守率を上げる。
 
-Install global MCPs once:
+### 3. インタビューのバッチ設計によるコスト削減
 
-```bash
-# Official docs lookup — prevents Claude Code from guessing API behavior
-claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest
+10 ターンの会話は 1 ターンの 55 倍のトークンコストがかかる（会話履歴の再送による）。
+1 問ずつ質問すると 20〜40 ターン必要になり、コストが爆発する。
 
-# Web search — for error resolution and external API research
-# Get a free key at brave.com/search/api/
-claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server
-```
-
-### 2. Describe your idea
-
-Open the Claude.ai Project and say what you want to build in 1–2 sentences. The PM Agent asks 15–30 questions across four stages — purpose, scope, behavior, constraints — then generates the files above.
-
-**v6.0 change:** The PM now asks 3–5 questions per turn (up from max 3), reducing total interview turns by ~40% and token costs by ~75%.
-
-### 3. Build
-
-```bash
-# Initialize project (run each command separately)
-npx create-next-app@latest my-app --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm
-cd my-app
-npx shadcn@latest init -d
-git init
-git add .
-git commit -m "initial scaffold"
-
-# Add playwright-slim MCP (required per project)
-claude mcp add playwright -s project -- npx -y @anthropic-ai/playwright-slim@latest
-
-# Place files: CLAUDE.md, vision.md, issues.md at project root
-# Place settings.json at .claude/settings.json
-
-# Start Claude Code
-claude
-```
-
-First message to Claude Code:
-```
-Read @vision.md and implement the first task in the Task Breakdown.
-```
-
-### 4. Complete the loop — run `/ev` when the project ships
-
-In your Claude.ai PM Agent project, type `/ev`. The agent outputs lessons in this format:
-
-```
-## XP-[N]: [One-line title]
-- Situation:  what you were doing when the problem occurred
-- Symptom:    the concrete error or failure
-- Root cause: why it happened — abstracted to be reusable
-- Rule:       [trigger] → [action]
-```
-
-Paste the output into `xp-rules.md`. Re-upload to your Claude.ai project. Done — the next project starts smarter.
+1 ターンに 3〜5 問をまとめて質問することで、インタビューを 8〜12 ターンに圧縮。
+各ステージ完了時に収集情報を構造化要約に圧縮し、raw な会話履歴を破棄することで
+二次関数的なコスト膨張を防いでいる。
 
 ---
 
-## Repository contents
+## 定量的効果（v6.0）
+
+| 改善点 | 効果 |
+|---|---|
+| インタビューバッチ（3〜5 問 / ターン）| トークンコスト 75% 削減 |
+| Playwright → playwright-slim 切替 | 検証トークン 73% 削減 |
+| Hooks による確定的テスト自動化 | エラーの 80% をトークンゼロで検知 |
+| フェーズ間圧縮（要約引き継ぎ）| インタビューコスト膨張を防止 |
+| **合計** | **v5.0 比 70〜90% コスト削減** |
+
+---
+
+## ファイル構成
 
 ```
 pm-zero-claude/
-├── pm-zero-claude-instructions.md    # PM Agent behavior — paste into Claude.ai Custom Instructions
-├── pm-zero-claude-knowledge-v6.0.md  # PM Agent knowledge base — upload to Claude.ai Knowledge
-├── xp-rules.md                       # Your accumulated lessons — upload to Claude.ai Knowledge
-├── pm-zero-claude-manual.html        # Full step-by-step guide — open in browser
-└── README.md                         # This file
+├── pm-zero-claude-instructions.md    # PM エージェントの行動規範（Claude.ai のカスタム指示に貼り付け）
+├── pm-zero-claude-knowledge-v6.0.md  # PM エージェントの知識ベース（Claude.ai のナレッジにアップロード）
+├── xp-rules.md                       # プロジェクト横断で蓄積された実践知
+└── README.md                         # このファイル
 ```
 
 ---
 
-## Design decisions
+## 使い方
 
-**Why 3–5 questions per turn?**
-Research shows users handle 7–10 questions comfortably. A 10-turn conversation costs 55x a single turn due to history resending. Batching 3–5 questions per turn cuts interview costs by 75% while staying well within cognitive load limits.
+### 1. PM エージェントのセットアップ（1 回のみ）
 
-**Why 3-tier verification instead of just Playwright?**
-Playwright MCP consumes 89–114K tokens per test session. The 3-tier architecture uses deterministic Hooks (lint, build, type-check) for 80% of error detection at zero AI token cost, playwright-slim for UI verification at 73% less tokens, and human visual confirmation only as the final gate.
+Claude.ai でプロジェクトを作成し、3 つのファイルを設定する。
 
-**Why Hooks for prettier/build/lint?**
-CLAUDE.md is probabilistically followed — Claude Code can and does ignore rules. Hooks are deterministic. Moving prettier/build/lint to Hooks guarantees 100% enforcement AND reduces CLAUDE.md rule count, which improves compliance with remaining rules.
+```
+カスタム指示 ← pm-zero-claude-instructions.md の内容を貼り付け
+ナレッジ     ← pm-zero-claude-knowledge-v6.0.md をアップロード
+ナレッジ     ← xp-rules.md をアップロード
+```
 
-**Why CLAUDE.md under 100 lines?**
-Claude Code follows approximately 200 instructions consistently, but its system prompt already uses ~50 of those slots. Every line added to CLAUDE.md uniformly reduces compliance with all other lines. The 30–100 line sweet spot maximizes the signal-to-noise ratio.
+グローバル MCP を 1 度だけインストールする。
 
-**Why phase compression in interviews?**
-Without compression, each interview turn resends the entire conversation history. A 15-turn interview accumulates massive redundant context. Compressing each stage into a structured summary (5–10 lines) and carrying forward only the summary prevents quadratic cost growth.
+```bash
+# 公式ドキュメント参照（API の推測実装を防止）
+claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest
+
+# Web 検索（エラー解決・外部 API 調査用）
+claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_KEY -- npx -y @brave/brave-search-mcp-server
+```
+
+### 2. アイデアを話す
+
+Claude.ai のプロジェクトに作りたいものを 1〜2 文で伝える。
+PM エージェントが 4 ステージ（目的→範囲→振る舞い→制約）で 15〜30 問インタビューし、5 成果物を生成する。
+
+### 3. 実装する
+
+```bash
+# プロジェクト初期化（1 コマンドずつ実行）
+npx create-next-app@latest my-app --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm
+cd my-app
+npx shadcn@latest init -d
+git init && git add . && git commit -m "initial scaffold"
+
+# playwright-slim MCP を追加（プロジェクト単位）
+claude mcp add playwright -s project -- npx -y @anthropic-ai/playwright-slim@latest
+
+# 生成ファイルを配置後、Claude Code を起動
+claude
+```
+
+Claude Code に最初に伝えること：
+
+```
+@vision.md を読んで、Task Breakdown の最初のタスクを実装してください
+```
+
+### 4. 教訓を蓄積する（プロジェクト完了時）
+
+PM エージェントに `/ev` と入力する。
+エラーログ（`issues.md`）を元に教訓が抽出され、`xp-rules.md` に追記する形で出力される。
+`xp-rules.md` を Claude.ai のナレッジに再アップロードすれば、次回から自動反映される。
 
 ---
 
-## Special commands
+## 特殊コマンド
 
-| Command | When | What happens |
-|---------|------|-------------|
-| `/ev` | After each project ships | Extracts lessons → append to `xp-rules.md` → generates README.md |
-| `/audit` | Monthly | PM Agent reviews knowledge base for outdated rules and proposes updates |
+| コマンド | タイミング | 処理内容 |
+|---|---|---|
+| `/ev` | プロジェクト完了時 | 教訓抽出 → xp-rules.md 用出力 + README.md 生成 |
+| `/audit` | 月 1 回推奨 | 知識ベースの陳腐化チェックと更新案の提示 |
 
 ---
 
-## Tech stack
+## 技術スタック前提
 
 Next.js 16+ (App Router) · React 19 · TypeScript strict · Tailwind CSS v4 · pnpm · Vercel
 
-The PM Agent confirms or adjusts this during the interview.
+インタビュー中に変更可能。vision.md は技術スタックに依存しない仕様書のため再利用できる。
 
 ---
 
-## Error recovery
-
-If Claude Code loops on the same error more than twice, paste this:
-
-```
-Stop. Follow these steps now:
-1. Save the current problem and every fix you've tried into progress.md
-2. Tell me to run /clear
-
-After /clear, start a new session and type:
-"Read @progress.md and solve the problem using a different approach.
-Do not try any method you already attempted."
-```
-
----
-
-## Who this is for
-
-- Non-engineers with product ideas and no coding background
-- Anyone who has tried Claude Code and gotten vague or broken outputs
-- People who want their AI tooling to improve over time, not reset with every chat
-
----
-
-## License
+## ライセンス
 
 MIT
