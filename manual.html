@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Zero Claude v7.0 — 使い方マニュアル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── リセット & ベース ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --text:        #1a1a1a;
+  --text-sub:    #555;
+  --text-light:  #888;
+  --border:      #e0e0e0;
+  --border-light:#f0f0f0;
+  --bg:          #fff;
+  --bg-soft:     #fafafa;
+  --bg-code:     #f4f4f4;
+  --accent:      #1a56db;
+  --accent-soft: #eef3ff;
+  --warn-bg:     #fffbea;
+  --warn-border: #f59e0b;
+  --ok-bg:       #f0fdf4;
+  --ok-border:   #22c55e;
+  --note-bg:     #f8faff;
+  --note-border: #93c5fd;
+  --serif:       'Zen Kaku Gothic New', 'Hiragino Sans', sans-serif;
+  --mono:        'IBM Plex Mono', 'Menlo', monospace;
+  --nav-w:       220px;
+  --content-max: 720px;
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+body {
+  font-family: var(--serif);
+  color: var(--text);
+  background: var(--bg);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+/* ── レイアウト ── */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── サイドナビ ── */
+nav {
+  width: var(--nav-w);
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: var(--bg-soft);
+  padding: 32px 0 40px;
+}
+
+.nav-logo {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.nav-logo .name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.nav-logo .ver {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+nav ul { list-style: none; }
+
+nav ul li a {
+  display: block;
+  padding: 6px 20px;
+  font-size: 13px;
+  color: var(--text-sub);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+nav ul li a:hover {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+nav ul li a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 700;
+}
+
+.nav-section {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  padding: 20px 20px 6px;
+}
+
+/* ── メインコンテンツ ── */
+main {
+  margin-left: var(--nav-w);
+  flex: 1;
+  min-width: 0;
+}
+
+.content {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 60px 40px 120px;
+}
+
+/* ── ヘッダー ── */
+.page-header {
+  padding: 56px 40px 48px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.page-header .subtitle {
+  color: var(--text-sub);
+  font-size: 15px;
+  margin-bottom: 20px;
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+.badge-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--bg-code);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+}
+
+.badge.accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: #bfdbfe;
+}
+
+/* ── セクション ── */
+section {
+  padding: 56px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+section:last-child { border-bottom: none; }
+
+h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 32px 0 12px;
+}
+
+h3:first-child { margin-top: 0; }
+
+p {
+  color: var(--text-sub);
+  margin-bottom: 14px;
+}
+
+p:last-child { margin-bottom: 0; }
+
+/* ── コードブロック ── */
+.pre-wrap {
+  position: relative;
+  margin: 16px 0;
+}
+
+.pre-wrap:hover .copy-btn { opacity: 1; }
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-sub);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: #bfdbfe;
+}
+
+.copy-btn.copied {
+  opacity: 1;
+  color: #15803d;
+  background: var(--ok-bg);
+  border-color: var(--ok-border);
+}
+
+.copy-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+pre {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  padding-right: 72px;
+  overflow-x: auto;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 6px;
+  color: #c02058;
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* ── 注意書き ── */
+.note, .warn, .ok {
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.7;
+  border-left: 3px solid;
+}
+
+.note {
+  background: var(--note-bg);
+  border-color: var(--note-border);
+  color: #1e3a5f;
+}
+
+.warn {
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+  color: #78350f;
+}
+
+.ok {
+  background: var(--ok-bg);
+  border-color: var(--ok-border);
+  color: #14532d;
+}
+
+.note strong, .warn strong, .ok strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── ステップリスト ── */
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 16px 0;
+}
+
+.steps li {
+  counter-increment: step;
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.steps li:last-child { border-bottom: none; }
+
+.steps li::before {
+  content: counter(step);
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--text);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.steps li .step-body { flex: 1; }
+
+.steps li .step-title {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.steps li .step-desc {
+  color: var(--text-sub);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ── テーブル ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  margin: 16px 0;
+}
+
+th {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  color: var(--text-sub);
+  vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--bg-soft); }
+
+/* ── フロー図 ── */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 20px 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.flow-item {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  text-align: center;
+  min-width: 90px;
+}
+
+.flow-arrow {
+  color: var(--text-light);
+  font-size: 18px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ── ファイルツリー ── */
+.tree {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 2;
+  margin: 16px 0;
+}
+
+.tree .dir { color: var(--text); font-weight: 500; }
+.tree .file { color: var(--text-sub); }
+.tree .comment { color: var(--text-light); font-style: italic; }
+
+/* ── チェックリスト ── */
+.checklist {
+  list-style: none;
+  margin: 12px 0;
+}
+
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+.checklist li::before {
+  content: '□';
+  color: var(--border);
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: -1px;
+}
+
+/* ── コマンドカード ── */
+.cmd-grid {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.cmd-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cmd-card .cmd-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-code);
+  border-bottom: 1px solid var(--border);
+}
+
+.cmd-card .cmd-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.cmd-card .cmd-when {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-left: auto;
+}
+
+.cmd-card .cmd-desc {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--text-sub);
+  margin: 0;
+}
+
+/* ── エスケープカード ── */
+.escape-card {
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.escape-card .escape-header {
+  background: #fef2f2;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #991b1b;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.escape-card .escape-body {
+  padding: 16px 18px;
+}
+
+.escape-card .escape-body p {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+/* ── モバイル対応 ── */
+@media (max-width: 768px) {
+  nav { display: none; }
+  main { margin-left: 0; }
+  .content { padding: 32px 20px 80px; }
+  .page-header { padding: 32px 20px 32px; }
+  .flow { flex-direction: column; align-items: flex-start; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- ── サイドナビ ── -->
+<nav id="nav">
+  <div class="nav-logo">
+    <div class="name">PM Zero Claude</div>
+    <div class="ver">v7.0 マニュアル</div>
+  </div>
+  <ul>
+    <li class="nav-section">はじめに</li>
+    <li><a href="#overview">このシステムについて</a></li>
+    <li><a href="#prereq">前提条件の確認</a></li>
+
+    <li class="nav-section">セットアップ</li>
+    <li><a href="#setup-claude">Claude.ai の準備</a></li>
+    <li><a href="#setup-mcp">MCP の登録</a></li>
+    <li><a href="#setup-settings">グローバル設定</a></li>
+
+    <li class="nav-section">使い方</li>
+    <li><a href="#new-project">新規プロジェクト</a></li>
+    <li><a href="#daily">日常の開発</a></li>
+    <li><a href="#commands">コマンド一覧</a></li>
+
+    <li class="nav-section">運用</li>
+    <li><a href="#evolution">自己進化サイクル</a></li>
+    <li><a href="#trouble">困ったとき</a></li>
+    <li><a href="#faq">よくある質問</a></li>
+  </ul>
+</nav>
+
+<!-- ── メイン ── -->
+<main>
+
+<div class="page-header">
+  <h1>PM Zero Claude</h1>
+  <p class="subtitle">非エンジニアのアイデアを、AI が自律実行できる仕様書セットに変換するシステム。<br>このマニュアルは、GitHub からダウンロードした直後の状態から読み始めることを想定しています。</p>
+  <div class="badge-row">
+    <span class="badge accent">v7.0</span>
+    <span class="badge">Claude Opus 4.7 対応</span>
+    <span class="badge">2026-04-17</span>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ── 概要 ── -->
+<section id="overview">
+  <h2>このシステムについて</h2>
+
+  <p>PM Zero Claude は 2 つの部分から成ります。</p>
+
+  <table>
+    <thead>
+      <tr><th>部分</th><th>場所</th><th>役割</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>PM エージェント</strong></td>
+        <td>Claude.ai（ブラウザ）</td>
+        <td>あなたのアイデアをインタビューで整理し、仕様書セットを生成する</td>
+      </tr>
+      <tr>
+        <td><strong>実装エージェント</strong></td>
+        <td>Claude Code（ターミナル）</td>
+        <td>仕様書を読んでコードを自律的に書く</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>全体の流れ</h3>
+
+  <div class="flow">
+    <div class="flow-item">💡<br>アイデアを話す</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-item">🎤<br>インタビュー</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-item">📄<br>仕様書生成</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-item">🤖<br>AI が実装</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-item">🚀<br>完成・デプロイ</div>
+  </div>
+
+  <h3>v7.0 で何が変わったか（v6.0 使用者向け）</h3>
+
+  <p>v6.0 で発生した「完了したタスクを AI が未完了と誤認する」問題を根本解決しました。タスクの状態・決定履歴・エラーログをファイルに記録する仕組みに変わり、セッションをまたいでも状態が失われなくなりました。</p>
+
+  <table>
+    <thead>
+      <tr><th>項目</th><th>v6.0</th><th>v7.0</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>タスク状態の保管場所</td><td>AI の記憶（消える）</td><td>state.md（消えない）</td></tr>
+      <tr><td>カスタム指示</td><td>別ファイルが必要</td><td>ナレッジファイルに統合・不要</td></tr>
+      <tr><td>成果物の数</td><td>5 ファイル</td><td>11 ファイル</td></tr>
+      <tr><td>自動処理（Hooks）</td><td>2 種</td><td>8 種（エラー記録・整形など自動化）</td></tr>
+      <tr><td>コンパクション閾値</td><td>83.5%（デフォルト）</td><td>45%（推奨・設定変更が必要）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Note</strong>
+    v7.0 では Claude.ai の「カスタム指示（Project instructions）」欄は空白のままで構いません。すべての設定は <code>pm-zero-claude-knowledge-v7.0.md</code> に統合されています。
+  </div>
+</section>
+
+<!-- ── 前提条件 ── -->
+<section id="prereq">
+  <h2>前提条件の確認</h2>
+
+  <p>セットアップを始める前に、以下がインストールされているか確認してください。</p>
+
+  <ul class="checklist">
+    <li>Node.js 22 LTS 以上（<a href="https://nodejs.org" target="_blank">nodejs.org</a> からインストール）</li>
+    <li>pnpm 10 以上（<code>npm install -g pnpm</code> でインストール）</li>
+    <li>Git（<a href="https://git-scm.com" target="_blank">git-scm.com</a> からインストール）</li>
+    <li>Claude Code（<code>npm install -g @anthropic-ai/claude-code</code> でインストール）</li>
+    <li>Claude.ai のアカウント（Pro プラン推奨）</li>
+    <li>Brave Search の API キー（無料枠あり・後述）</li>
+  </ul>
+
+  <h3>確認方法</h3>
+
+  <p>PowerShell を開いて、以下を 1 行ずつ実行してください。バージョン番号が表示されれば OK です。</p>
+
+  <pre>node --version
+pnpm --version
+git --version
+claude --version</pre>
+
+  <div class="warn">
+    <strong>Windows のみ</strong>
+    PowerShell で「実行できません」と表示された場合は、以下を実行してから再試行してください。<br>
+    <code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code>
+  </div>
+</section>
+
+<!-- ── Claude.ai の準備 ── -->
+<section id="setup-claude">
+  <h2>Claude.ai の準備</h2>
+
+  <h3>プロジェクトの作成</h3>
+
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <div class="step-title">Claude.ai を開く</div>
+        <p class="step-desc"><a href="https://claude.ai" target="_blank">claude.ai</a> にアクセスし、アカウントでログインします。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">プロジェクトを作成する</div>
+        <p class="step-desc">左サイドバーの「Projects」→「+ New project」をクリックします。名前は「pm-zero」などわかりやすい名前にしてください。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">ナレッジにファイルをアップロードする</div>
+        <p class="step-desc">プロジェクト設定の「Project knowledge」セクションに、以下の 2 ファイルをアップロードします。</p>
+        <pre>pm-zero-claude-knowledge-v7.0.md
+xp-rules.md</pre>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">カスタム指示は空のままにする</div>
+        <p class="step-desc">「Project instructions（カスタム指示）」欄は何も入力しません。v7.0 ではナレッジファイルに設定が統合されているため不要です。</p>
+      </div>
+    </li>
+  </ol>
+
+  <div class="ok">
+    <strong>完了の確認</strong>
+    プロジェクトのチャットに「こんなアプリを作りたい」と入力したとき、Claude が「5 つの成果物を生成します。まず質問します。」と返答すれば成功です。
+  </div>
+</section>
+
+<!-- ── MCP の登録 ── -->
+<section id="setup-mcp">
+  <h2>MCP の登録</h2>
+
+  <p>MCP（Model Context Protocol）は、Claude Code に外部ツールを使わせるための仕組みです。以下の 2 つを登録します。1 度登録すれば、全プロジェクトで使えます。</p>
+
+  <h3>Context7（公式ドキュメント参照）</h3>
+  <p>Next.js・React・Tailwind などの最新仕様を Claude に参照させます。API キー不要です。</p>
+
+  <pre>claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest</pre>
+
+  <h3>Brave Search（Web 検索）</h3>
+  <p>外部サービスの最新 UI 確認・エラー解決に使います。API キーが必要です。</p>
+
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <div class="step-title">Brave Search API キーを取得する</div>
+        <p class="step-desc"><a href="https://api.search.brave.com/app/keys" target="_blank">api.search.brave.com/app/keys</a> にアクセス → アカウント作成 → API キーを発行します（無料枠：月 2,000 クエリ）。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">MCP を登録する</div>
+        <p class="step-desc"><code>YOUR_API_KEY</code> を取得したキーに置き換えて実行します。</p>
+        <pre>claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server</pre>
+      </div>
+    </li>
+  </ol>
+
+  <h3>登録の確認</h3>
+  <pre>claude mcp list</pre>
+  <p>以下のように表示されれば OK です。</p>
+  <pre>context7      (user)
+brave-search  (user)</pre>
+</section>
+
+<!-- ── グローバル設定 ── -->
+<section id="setup-settings">
+  <h2>グローバル設定の更新</h2>
+
+  <p>Claude Code 全体に適用される設定ファイルを更新します。以下をそのままコピーして PowerShell に貼り付けて実行してください。</p>
+
+  <pre>@'
+{
+  "env": {
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "45"
+  }
+}
+'@ | Set-Content "$env:USERPROFILE\.claude\settings.json" -Encoding UTF8</pre>
+
+  <p>確認します。</p>
+
+  <pre>Get-Content "$env:USERPROFILE\.claude\settings.json"</pre>
+
+  <table>
+    <thead><tr><th>設定項目</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>CLAUDE_CODE_USE_POWERSHELL_TOOL</code></td>
+        <td>Windows の PowerShell でコマンドを実行できるようにする</td>
+      </tr>
+      <tr>
+        <td><code>CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: 45</code></td>
+        <td>コンテキストが 45% 埋まったら自動で圧縮する（品質維持のため）</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <strong>Note</strong>
+    以前の設定に <code>CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING</code> があった場合は削除します。Claude Opus 4.7（2026-04-16 リリース）では無視される設定で、Sonnet では逆にコスト増加を招くためです。
+  </div>
+
+  <div class="ok">
+    <strong>セットアップ完了</strong>
+    ここまで完了すれば、PM Zero Claude v7.0 を使い始める準備が整いました。
+  </div>
+</section>
+
+<!-- ── 新規プロジェクト ── -->
+<section id="new-project">
+  <h2>新規プロジェクトを始める</h2>
+
+  <h3>Phase 1：アイデアを仕様書に変換する（Claude.ai）</h3>
+
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <div class="step-title">Claude.ai の pm-zero プロジェクトを開く</div>
+        <p class="step-desc">作りたいものを 1〜2 文で伝えます。「家計簿アプリを作りたい」「レシピを保存できるサイトを作りたい」など、曖昧でも大丈夫です。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">インタビューに答える</div>
+        <p class="step-desc">PM が 4 ステージ（目的→範囲→振る舞い→制約）で 15〜30 問を質問します。1 ターンに 3〜5 問まとめて来ます。わからないことは「わからない」と答えても進められます。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">成果物ファイルを受け取る</div>
+        <p class="step-desc">インタビュー完了後、PM が仕様書セット（11 ファイル分の内容）を生成します。それぞれのファイルをコピーして保存してください。</p>
+      </div>
+    </li>
+  </ol>
+
+  <h3>Phase 2：プロジェクトフォルダを作る（PowerShell）</h3>
+
+  <p>プロジェクトを置くフォルダに移動して以下を実行します。</p>
+
+  <pre># フォルダを作成して移動（プロジェクト名を変更してください）
+New-Item -ItemType Directory -Path "$env:USERPROFILE\.claude\dev\my-app"
+cd "$env:USERPROFILE\.claude\dev\my-app"
+
+# Next.js プロジェクトを作成
+pnpm create next-app@latest . --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm --turbopack --yes
+
+# shadcn/ui を追加
+pnpm dlx shadcn@latest init -d
+
+# Git を初期化
+git init
+git branch -M main
+git add .
+git commit -m "initial scaffold"
+
+# playwright-slim MCP を追加（このプロジェクト専用）
+claude mcp add playwright -s project -- npx -y @anthropic-ai/playwright-slim@latest</pre>
+
+  <h3>Phase 3：ファイルを配置する</h3>
+
+  <p>PM から受け取ったファイルを、以下の構造で配置します。</p>
+
+  <div class="tree">
+    <span class="dir">my-app/</span><br>
+    <span class="file">├── CLAUDE.md</span>　　　　<span class="comment"># PM が生成したファイルを配置</span><br>
+    <span class="file">├── vision.md</span>　　　　 <span class="comment"># 同上</span><br>
+    <span class="file">├── .env.example</span>　　　<span class="comment"># 同上（必要な API キー一覧）</span><br>
+    <span class="file">├── .env.local</span>　　　　<span class="comment"># .env.example をコピーして値を入力</span><br>
+    <span class="dir">└── .claude/</span><br>
+    <span class="file">　　 ├── settings.json</span>　<span class="comment"># PM が生成</span><br>
+    <span class="file">　　 ├── state.md</span>　　　<span class="comment"># PM が生成（タスク状態管理）</span><br>
+    <span class="file">　　 ├── decisions.md</span>　<span class="comment"># PM が生成（決定履歴）</span><br>
+    <span class="file">　　 ├── issues.md</span>　　 <span class="comment"># PM が生成（エラー記録）</span><br>
+    <span class="file">　　 ├── escape.md</span>　　 <span class="comment"># PM が生成（緊急時用）</span><br>
+    <span class="dir">　　 ├── agents/</span>　　　<span class="comment"># 専門エージェント 3 体</span><br>
+    <span class="dir">　　 ├── skills/</span>　　　<span class="comment"># 再利用可能な手順書 7 本</span><br>
+    <span class="dir">　　 └── hooks/</span>　　　<span class="comment"># 自動実行スクリプト 8 本</span><br>
+  </div>
+
+  <h3>Phase 4：実装を開始する（Claude Code）</h3>
+
+  <pre># プロジェクトフォルダで Claude Code を起動
+claude</pre>
+
+  <p>起動後、以下をそのまま入力します。</p>
+
+  <pre>@vision.md を読んで、@env-setup で必要な外部サービスの設定を開始してください</pre>
+
+  <p>外部サービスの API キーをすべて取得したら、実装を開始します。</p>
+
+  <pre>Task Breakdown の最初のタスクを実装してください</pre>
+</section>
+
+<!-- ── 日常の開発 ── -->
+<section id="daily">
+  <h2>日常の開発</h2>
+
+  <h3>毎回の起動</h3>
+
+  <pre>cd "$env:USERPROFILE\.claude\dev\my-app"
+claude</pre>
+
+  <p>起動すると Hook が自動で state.md を確認し、前回の状態から正確に再開します。</p>
+
+  <h3>中断・再開</h3>
+
+  <p>数日以上あいた場合は、起動後に以下を入力してください。</p>
+
+  <pre>/resume</pre>
+
+  <p>Claude が state.md と実際のコードを照合し、現状を報告した上で次のタスクを提案します。</p>
+
+  <h3>自動で動いている仕組み</h3>
+
+  <p>以下は何もしなくても自動で動きます。</p>
+
+  <table>
+    <thead><tr><th>タイミング</th><th>自動で行われること</th></tr></thead>
+    <tbody>
+      <tr><td>ファイルを保存したとき</td><td>コードの自動整形・型エラーの検出</td></tr>
+      <tr><td>エラーが発生したとき</td><td>issues.md に内容を自動記録</td></tr>
+      <tr><td>タスクが完了したとき</td><td>state.md の状態を自動更新</td></tr>
+      <tr><td>文脈が 45% を超えたとき</td><td>自動で圧縮・state.md から状態を復元</td></tr>
+      <tr><td>セッション開始時</td><td>state.md と実コードの整合性を確認</td></tr>
+    </tbody>
+  </table>
+
+  <h3>エラーが解決しないとき</h3>
+
+  <div class="escape-card">
+    <div class="escape-header">⚠ エスケープ手順（3 回以上解決しないとき）</div>
+    <div class="escape-body">
+      <p>同じエラーが 3 回以上解決しない場合、Claude が自動で <code>/escape</code> を起動します。以下の手順に従ってください。</p>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <div class="step-title">現在のセッションで /clear を実行</div>
+            <p class="step-desc">Claude Code のチャットに <code>/clear</code> と入力します。</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <div class="step-title">Opus 4.7 に切り替える</div>
+            <p class="step-desc"><code>/model opus</code> と入力します。</p>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <div class="step-title">以下をコピペして入力する</div>
+            <p class="step-desc">Claude Code のチャットにこれを貼り付けます。</p>
+            <pre data-copytext="@.claude/escape.md と @.claude/state.md を読み、前回と異なるアプローチで問題を解決してください。前回試したアプローチは避けてください。">&#64;.claude/escape.md と &#64;.claude/state.md を読み、前回と異なるアプローチで問題を解決してください。前回試したアプローチは避けてください。</pre>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <div class="step-title">解決後は Sonnet に戻す</div>
+            <p class="step-desc"><code>/model sonnet</code> と入力します（Opus は消費量が多いため）。</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ── コマンド一覧 ── -->
+<section id="commands">
+  <h2>コマンド一覧</h2>
+
+  <h3>Claude Code で使うコマンド（<code>/</code> から始まるもの）</h3>
+
+  <div class="cmd-grid">
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">/resume</span>
+        <span class="cmd-when">中断後の再開時</span>
+      </div>
+      <p class="cmd-desc">state.md と実コードを照合し、前回からの変更と次に着手すべきタスクを報告します。</p>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">/console-debug</span>
+        <span class="cmd-when">ブラウザエラーが解決しないとき</span>
+      </div>
+      <p class="cmd-desc">ブラウザの F12（開発者ツール）からエラーをコピーする手順を案内します。エラーを貼り付けると原因を特定します。</p>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">/escape</span>
+        <span class="cmd-when">3 回以上エラーが解決しないとき</span>
+      </div>
+      <p class="cmd-desc">試行履歴を escape.md に記録し、Opus 4.7 に切り替えるエスケープ手順を案内します。</p>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">/ev</span>
+        <span class="cmd-when">プロジェクト完了時</span>
+      </div>
+      <p class="cmd-desc">エラーログを分析して再発防止ルールを抽出します。README.md も自動生成します。</p>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">/audit</span>
+        <span class="cmd-when">月 1 回推奨</span>
+      </div>
+      <p class="cmd-desc">ナレッジの陳腐化を確認します。ライブラリのバージョンや MCP の更新をチェックします。</p>
+    </div>
+  </div>
+
+  <h3>Subagent の呼び出し（<code>@</code> から始まるもの）</h3>
+
+  <div class="cmd-grid">
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">@pm-zero</span>
+        <span class="cmd-when">仕様の追加・変更時</span>
+      </div>
+      <p class="cmd-desc">開発途中で新機能を追加したいとき。インタビューして vision.md の更新案を作ります。</p>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">@env-setup [サービス名]</span>
+        <span class="cmd-when">外部サービスの設定時</span>
+      </div>
+      <p class="cmd-desc">Supabase・OpenAI・Stripe などの API キー取得手順を最新の UI に基づいて案内します。</p>
+    </div>
+    <div class="cmd-card">
+      <div class="cmd-header">
+        <span class="cmd-name">@verifier</span>
+        <span class="cmd-when">状態確認時</span>
+      </div>
+      <p class="cmd-desc">state.md に記録されたタスク状態と実際のコードが一致しているか確認します。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 自己進化 ── -->
+<section id="evolution">
+  <h2>自己進化サイクル</h2>
+
+  <p>PM Zero Claude は、プロジェクトを完了するたびに自分自身のルールを更新します。</p>
+
+  <h3>プロジェクト完了時の手順</h3>
+
+  <ol class="steps">
+    <li>
+      <div class="step-body">
+        <div class="step-title">Claude Code で /ev を実行する</div>
+        <p class="step-desc">エラーログ（issues.md）を元に、再発防止ルールが自動抽出されます。最大 3 件の教訓が <code>xp-rules.md</code> 形式で出力されます。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">xp-rules.md を更新する</div>
+        <p class="step-desc">出力された教訓を <code>xp-rules.md</code> にコピーします（10 件上限）。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">Claude.ai のナレッジを更新する</div>
+        <p class="step-desc">更新した <code>xp-rules.md</code> を Claude.ai の pm-zero プロジェクトに再アップロードします。次回から自動で反映されます。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <div class="step-title">GitHub にプッシュする</div>
+        <p class="step-desc">README.md と xp-rules.md をリポジトリに反映します。</p>
+        <pre>git add .
+git commit -m "chore: /ev 教訓を追加"
+git push</pre>
+      </div>
+    </li>
+  </ol>
+
+  <div class="note">
+    <strong>Note</strong>
+    教訓は「このプロジェクト固有の対症療法」ではなく、「次のプロジェクトでも通用する抽象化されたルール」にすることが原則です。Claude が自動で判断しますが、最終的にはあなたが承認してから追加されます。
+  </div>
+</section>
+
+<!-- ── 困ったとき ── -->
+<section id="trouble">
+  <h2>困ったとき</h2>
+
+  <h3>bootstrap.ps1 を実行したらブロックされた</h3>
+  <p>Windows のセキュリティ機能によるものです。以下のいずれかで解除できます。</p>
+  <pre># 方法 A：そのファイルだけ解除する（推奨）
+Unblock-File -Path ".\bootstrap.ps1"
+
+# 方法 B：ユーザー設定を変更する
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</pre>
+
+  <h3>claude コマンドが認識されない</h3>
+  <pre>npm install -g @anthropic-ai/claude-code</pre>
+  <p>インストール後、PowerShell を再起動してください。</p>
+
+  <h3>MCP が動かない</h3>
+  <pre># 登録状況を確認
+claude mcp list
+
+# 再登録（context7）
+claude mcp remove context7
+claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest</pre>
+
+  <h3>Hook が動かない（prettier・型チェックが走らない）</h3>
+  <pre># Hook の登録状況を確認
+claude /hooks
+
+# Node.js のバージョンを確認（22 以上が必要）
+node --version</pre>
+
+  <h3>state.md と実際の状態がずれている</h3>
+  <p>実際のコードが正しい情報です。<code>@verifier</code> を実行すると、ずれを自動検出して修正案を提示します。</p>
+  <pre>@verifier</pre>
+
+  <h3>コンパクションが頻繁すぎる</h3>
+  <p>45% が圧縮の目安ですが、作業の流れが頻繁に途切れる場合は 50% に上げてみてください。</p>
+  <pre>@'
+{
+  "env": {
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50"
+  }
+}
+'@ | Set-Content "$env:USERPROFILE\.claude\settings.json" -Encoding UTF8</pre>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <h2>よくある質問</h2>
+
+  <h3>Q. 非エンジニアでも使えますか？</h3>
+  <p>はい。このシステムは非エンジニアを対象に設計されています。コードを書く必要はなく、Claude.ai でアイデアを話し、Claude Code で指示を出すだけで動きます。</p>
+
+  <h3>Q. どれくらいのコストがかかりますか？</h3>
+  <p>Claude Pro プラン（$20/月）と Brave Search の無料枠（月 2,000 クエリ）があれば動きます。v7.0 では v6.0 比でトークン消費を 40〜60% 削減する設計にしています。</p>
+
+  <h3>Q. プロジェクトの途中でアイデアが変わったら？</h3>
+  <p>Claude Code で <code>@pm-zero この機能を追加したい</code> と入力してください。追加のインタビューを経て、vision.md の更新案が作成されます。</p>
+
+  <h3>Q. 生成されるアプリの技術スタックは？</h3>
+  <p>デフォルトは Next.js 16 / React 19 / TypeScript / Tailwind CSS v4 / pnpm / Vercel です。インタビュー中に変更可能です。</p>
+
+  <h3>Q. カスタム指示（Project instructions）に何か入れる必要がありますか？</h3>
+  <p>v7.0 では不要です。すべての設定は <code>pm-zero-claude-knowledge-v7.0.md</code> に統合されています。カスタム指示欄は空白にしてください。</p>
+
+  <h3>Q. /ev と /audit は何が違いますか？</h3>
+  <p><code>/ev</code> はプロジェクト完了時に「今回の失敗から学ぶ」コマンドです。<code>/audit</code> は月 1 回、ライブラリのバージョンやナレッジが古くなっていないか確認するメンテナンスコマンドです。</p>
+
+  <h3>Q. GitHub リポジトリはどう管理すればいい？</h3>
+  <p>このリポジトリには <code>pm-zero-claude-knowledge-v7.0.md</code>・<code>xp-rules.md</code>・<code>README.md</code>・<code>manual.html</code> の 4 ファイルだけ管理すれば十分です。プロジェクトのコードは別のリポジトリで管理します。</p>
+</section>
+
+</div><!-- /.content -->
+</main>
+</div><!-- /.layout -->
+
+<script>
+// ── コピーボタンの生成 ──
+const ICON_COPY = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+  <rect x="5" y="5" width="9" height="9" rx="1.5"/>
+  <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/>
+</svg>`;
+
+const ICON_CHECK = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+  <polyline points="2.5,8.5 6,12 13.5,4"/>
+</svg>`;
+
+document.querySelectorAll('pre').forEach(pre => {
+  // .pre-wrap でラップ
+  const wrap = document.createElement('div');
+  wrap.className = 'pre-wrap';
+  pre.parentNode.insertBefore(wrap, pre);
+  wrap.appendChild(pre);
+
+  // ボタン生成
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.innerHTML = ICON_COPY + '<span>コピー</span>';
+  btn.setAttribute('aria-label', 'コードをコピー');
+
+  btn.addEventListener('click', () => {
+    const text = pre.dataset.copytext || pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = ICON_CHECK + '<span>コピー完了</span>';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = ICON_COPY + '<span>コピー</span>';
+      }, 2000);
+    }).catch(() => {
+      // clipboard API が使えない場合のフォールバック
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.classList.add('copied');
+      btn.innerHTML = ICON_CHECK + '<span>コピー完了</span>';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = ICON_COPY + '<span>コピー</span>';
+      }, 2000);
+    });
+  });
+
+  wrap.appendChild(btn);
+});
+
+// ── アクティブなナビリンクのハイライト ──
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
