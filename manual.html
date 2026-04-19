@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PM Zero Claude v7.0 — 使い方マニュアル</title>
+<title>PM Zero Claude v7.2 — 使い方マニュアル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -560,7 +560,7 @@ tr:nth-child(even) td { background: var(--bg-soft); }
 <nav id="nav">
   <div class="nav-logo">
     <div class="name">PM Zero Claude</div>
-    <div class="ver">v7.0 マニュアル</div>
+    <div class="ver">v7.2 マニュアル</div>
   </div>
   <ul>
     <li class="nav-section">はじめに</li>
@@ -591,9 +591,9 @@ tr:nth-child(even) td { background: var(--bg-soft); }
   <h1>PM Zero Claude</h1>
   <p class="subtitle">非エンジニアのアイデアを、AI が自律実行できる仕様書セットに変換するシステム。<br>このマニュアルは、GitHub からダウンロードした直後の状態から読み始めることを想定しています。</p>
   <div class="badge-row">
-    <span class="badge accent">v7.0</span>
+    <span class="badge accent">v7.2</span>
     <span class="badge">Claude Opus 4.7 対応</span>
-    <span class="badge">2026-04-17</span>
+    <span class="badge">2026-04-19</span>
   </div>
 </div>
 
@@ -637,26 +637,28 @@ tr:nth-child(even) td { background: var(--bg-soft); }
     <div class="flow-item">🚀<br>完成・デプロイ</div>
   </div>
 
-  <h3>v7.0 で何が変わったか（v6.0 使用者向け）</h3>
+  <h3>v7.2 で何が変わったか（v7.1 使用者向け）</h3>
 
-  <p>v6.0 で発生した「完了したタスクを AI が未完了と誤認する」問題を根本解決しました。タスクの状態・決定履歴・エラーログをファイルに記録する仕組みに変わり、セッションをまたいでも状態が失われなくなりました。</p>
+  <p>v7.1 で「架空」と誤記されていた Hook イベントの全面修正、Playwright MCP パッケージ名の誤りの訂正、PowerShell 5.1 と 7+ の差異の明記など、公式仕様との乖離を一掃しました。また、インタビュー前に最新情報を自動調査する「Phase 0 リサーチゲート」が追加されました。</p>
 
   <table>
     <thead>
-      <tr><th>項目</th><th>v6.0</th><th>v7.0</th></tr>
+      <tr><th>項目</th><th>v7.1</th><th>v7.2</th></tr>
     </thead>
     <tbody>
-      <tr><td>タスク状態の保管場所</td><td>AI の記憶（消える）</td><td>state.md（消えない）</td></tr>
-      <tr><td>カスタム指示</td><td>別ファイルが必要</td><td>ナレッジファイルに統合・不要</td></tr>
-      <tr><td>成果物の数</td><td>5 ファイル</td><td>11 ファイル</td></tr>
-      <tr><td>自動処理（Hooks）</td><td>2 種</td><td>8 種（エラー記録・整形など自動化）</td></tr>
-      <tr><td>コンパクション閾値</td><td>83.5%（デフォルト）</td><td>45%（推奨・設定変更が必要）</td></tr>
+      <tr><td>インタビュー前リサーチ</td><td>なし</td><td>Phase 0 リサーチゲート（6 項目・省略禁止）</td></tr>
+      <tr><td>Hook 数</td><td>9 本</td><td>10 本（StopFailure 追加・SessionStart matcher に clear 追記）</td></tr>
+      <tr><td>Playwright MCP パッケージ</td><td>@anthropic-ai/playwright-slim（存在しない）</td><td>@playwright/mcp（Microsoft 公式）</td></tr>
+      <tr><td>MCP 登録コマンド</td><td>claude mcp add（CLI バグあり）</td><td>claude mcp add-json 推奨</td></tr>
+      <tr><td>成果物構成</td><td>段階追加 11 ファイル</td><td>コア 5 + 段階追加 6（bootstrap.ps1 をコアに昇格）</td></tr>
+      <tr><td>/audit Skill</td><td>推奨</td><td>必須 3 Skill に昇格</td></tr>
+      <tr><td>xp-rules.md</td><td>独立運用（10 教訓）</td><td>v7.2 ナレッジに統合・リセット済み</td></tr>
     </tbody>
   </table>
 
   <div class="note">
     <strong>Note</strong>
-    v7.0 では Claude.ai の「カスタム指示（Project instructions）」欄は空白のままで構いません。すべての設定は <code>pm-zero-claude-knowledge-v7.0.md</code> に統合されています。
+    v7.2 では Claude.ai の「カスタム指示（Project instructions）」欄は空白のままで構いません。すべての設定は <code>pm-zero-claude-knowledge-v7.2.md</code> に統合されています。
   </div>
 </section>
 
@@ -714,21 +716,21 @@ claude --version</pre>
       <div class="step-body">
         <div class="step-title">ナレッジにファイルをアップロードする</div>
         <p class="step-desc">プロジェクト設定の「Project knowledge」セクションに、以下の 2 ファイルをアップロードします。</p>
-        <pre>pm-zero-claude-knowledge-v7.0.md
+        <pre>pm-zero-claude-knowledge-v7.2.md
 xp-rules.md</pre>
       </div>
     </li>
     <li>
       <div class="step-body">
         <div class="step-title">カスタム指示は空のままにする</div>
-        <p class="step-desc">「Project instructions（カスタム指示）」欄は何も入力しません。v7.0 ではナレッジファイルに設定が統合されているため不要です。</p>
+        <p class="step-desc">「Project instructions（カスタム指示）」欄は何も入力しません。v7.2 ではナレッジファイルに設定が統合されているため不要です。</p>
       </div>
     </li>
   </ol>
 
   <div class="ok">
     <strong>完了の確認</strong>
-    プロジェクトのチャットに「こんなアプリを作りたい」と入力したとき、Claude が「5 つの成果物を生成します。まず質問します。」と返答すれば成功です。
+    プロジェクトのチャットに「こんなアプリを作りたい」と入力したとき、Claude が「pm-zero-claude v7.2 で成果物を生成します。まず Phase 0 リサーチを実施します。」と返答すれば成功です。
   </div>
 </section>
 
@@ -738,13 +740,18 @@ xp-rules.md</pre>
 
   <p>MCP（Model Context Protocol）は、Claude Code に外部ツールを使わせるための仕組みです。以下の 2 つを登録します。1 度登録すれば、全プロジェクトで使えます。</p>
 
+  <div class="warn">
+    <strong>Windows ユーザーへ注意</strong>
+    <code>claude mcp add -- cmd /c</code> を使うと <code>/c</code> が <code>C:/</code> に変換されて設定が壊れる既知バグがあります（2026-04-19 時点で未修正）。以下に示す <code>add-json</code> 形式を使ってください。
+  </div>
+
   <h3>Context7（公式ドキュメント参照）</h3>
   <p>Next.js・React・Tailwind などの最新仕様を Claude に参照させます。API キー不要です。</p>
 
-  <pre>claude mcp add context7 -s user -- npx -y @upstash/context7-mcp@latest</pre>
+  <pre>claude mcp add-json context7 -s user '{"type":"stdio","command":"cmd","args":["/c","npx","-y","@upstash/context7-mcp@latest"]}'</pre>
 
   <h3>Brave Search（Web 検索）</h3>
-  <p>外部サービスの最新 UI 確認・エラー解決に使います。API キーが必要です。</p>
+  <p>外部サービスの最新 UI 確認・Phase 0 リサーチ・エラー解決に使います。API キーが必要です。</p>
 
   <ol class="steps">
     <li>
@@ -757,7 +764,7 @@ xp-rules.md</pre>
       <div class="step-body">
         <div class="step-title">MCP を登録する</div>
         <p class="step-desc"><code>YOUR_API_KEY</code> を取得したキーに置き換えて実行します。</p>
-        <pre>claude mcp add brave-search -s user -e BRAVE_API_KEY=YOUR_API_KEY -- npx -y @brave/brave-search-mcp-server</pre>
+        <pre>claude mcp add-json brave-search -s user '{"type":"stdio","command":"cmd","args":["/c","npx","-y","@brave/brave-search-mcp-server"],"env":{"BRAVE_API_KEY":"YOUR_API_KEY"}}'</pre>
       </div>
     </li>
   </ol>
@@ -804,12 +811,12 @@ brave-search  (user)</pre>
 
   <div class="note">
     <strong>Note</strong>
-    以前の設定に <code>CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING</code> があった場合は削除します。Claude Opus 4.7（2026-04-16 リリース）では無視される設定で、Sonnet では逆にコスト増加を招くためです。
+    以前の設定に <code>CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING</code> があった場合は削除します。Opus 4.7 では無視される設定です（Opus 4.7 の adaptive thinking は <code>effort</code> パラメータで制御）。Sonnet 4.6 で off にしたい場合のみ有効です。
   </div>
 
   <div class="ok">
     <strong>セットアップ完了</strong>
-    ここまで完了すれば、PM Zero Claude v7.0 を使い始める準備が整いました。
+    ここまで完了すれば、PM Zero Claude v7.2 を使い始める準備が整いました。
   </div>
 </section>
 
@@ -828,60 +835,66 @@ brave-search  (user)</pre>
     </li>
     <li>
       <div class="step-body">
+        <div class="step-title">Phase 0 リサーチを待つ</div>
+        <p class="step-desc">PM がインタビュー前に自動でリサーチを行います（フレームワーク最新バージョン・外部 API の仕様・MCP パッケージ名の確認など 6 項目）。リサーチ結果のサマリが表示されたら確認して「次に進んでください」と伝えます。</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
         <div class="step-title">インタビューに答える</div>
-        <p class="step-desc">PM が 4 ステージ（目的→範囲→振る舞い→制約）で 15〜30 問を質問します。1 ターンに 3〜5 問まとめて来ます。わからないことは「わからない」と答えても進められます。</p>
+        <p class="step-desc">PM が 4 ステージ（目的→範囲→振る舞い→制約）で 15〜25 問を質問します。1 ターンに 3〜5 問まとめて来ます。わからないことは「わからない」と答えても進められます。</p>
       </div>
     </li>
     <li>
       <div class="step-body">
         <div class="step-title">成果物ファイルを受け取る</div>
-        <p class="step-desc">インタビュー完了後、PM が仕様書セット（11 ファイル分の内容）を生成します。それぞれのファイルをコピーして保存してください。</p>
+        <p class="step-desc">インタビュー完了後、PM がコア 5 ファイル（CLAUDE.md・vision.md・.env.example・settings.json・bootstrap.ps1）を最初に生成します。各ファイルをコピーして保存してください。</p>
       </div>
     </li>
   </ol>
 
   <h3>Phase 2：プロジェクトフォルダを作る（PowerShell）</h3>
 
-  <p>プロジェクトを置くフォルダに移動して以下を実行します。</p>
+  <p>まず、PM から受け取った <code>bootstrap.ps1</code> をプロジェクトフォルダに配置してから実行します。</p>
 
   <pre># フォルダを作成して移動（プロジェクト名を変更してください）
-New-Item -ItemType Directory -Path "$env:USERPROFILE\.claude\dev\my-app"
-cd "$env:USERPROFILE\.claude\dev\my-app"
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\dev\my-app" | Out-Null
+Set-Location "$env:USERPROFILE\.claude\dev\my-app"
 
-# Next.js プロジェクトを作成
-pnpm create next-app@latest . --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm --turbopack --yes
+# 初回のみ：実行ポリシーの許可
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-# shadcn/ui を追加
-pnpm dlx shadcn@latest init -d
+# PM から受け取った bootstrap.ps1 をここに配置してから実行
+.\bootstrap.ps1</pre>
 
-# Git を初期化
-git init
-git branch -M main
-git add .
-git commit -m "initial scaffold"
+  <p><code>bootstrap.ps1</code> が自動で Next.js セットアップ・shadcn/ui 追加・Git 初期化・フォルダ作成・MCP 登録を行います。手動での個別実行は不要です。</p>
 
-# playwright-slim MCP を追加（このプロジェクト専用）
-claude mcp add playwright -s project -- npx -y @anthropic-ai/playwright-slim@latest</pre>
+  <div class="note">
+    <strong>Note</strong>
+    v7.2 では Playwright MCP のパッケージが <code>@playwright/mcp</code>（Microsoft 公式）に変わりました。<code>@anthropic-ai/playwright-slim</code> は存在しないため使用しないでください。
+  </div>
 
-  <h3>Phase 3：ファイルを配置する</h3>
+  <h3>Phase 3：残りのファイルを配置する</h3>
 
-  <p>PM から受け取ったファイルを、以下の構造で配置します。</p>
+  <p>bootstrap.ps1 の実行後、PM から受け取った残りのファイルを以下の構造で配置します。</p>
 
   <div class="tree">
     <span class="dir">my-app/</span><br>
-    <span class="file">├── CLAUDE.md</span>　　　　<span class="comment"># PM が生成したファイルを配置</span><br>
-    <span class="file">├── vision.md</span>　　　　 <span class="comment"># 同上</span><br>
-    <span class="file">├── .env.example</span>　　　<span class="comment"># 同上（必要な API キー一覧）</span><br>
+    <span class="file">├── CLAUDE.md</span>　　　　<span class="comment"># PM が生成（コア 5）</span><br>
+    <span class="file">├── vision.md</span>　　　　 <span class="comment"># PM が生成（コア 5）</span><br>
+    <span class="file">├── .env.example</span>　　　<span class="comment"># PM が生成（コア 5・必要な API キー一覧）</span><br>
     <span class="file">├── .env.local</span>　　　　<span class="comment"># .env.example をコピーして値を入力</span><br>
+    <span class="file">├── bootstrap.ps1</span>　　　<span class="comment"># PM が生成（コア 5）← bootstrap で実行済み</span><br>
+    <span class="file">├── .mcp.json</span>　　　　 <span class="comment"># bootstrap が生成（プロジェクト MCP）</span><br>
     <span class="dir">└── .claude/</span><br>
-    <span class="file">　　 ├── settings.json</span>　<span class="comment"># PM が生成</span><br>
-    <span class="file">　　 ├── state.md</span>　　　<span class="comment"># PM が生成（タスク状態管理）</span><br>
-    <span class="file">　　 ├── decisions.md</span>　<span class="comment"># PM が生成（決定履歴）</span><br>
-    <span class="file">　　 ├── issues.md</span>　　 <span class="comment"># PM が生成（エラー記録）</span><br>
-    <span class="file">　　 ├── escape.md</span>　　 <span class="comment"># PM が生成（緊急時用）</span><br>
-    <span class="dir">　　 ├── agents/</span>　　　<span class="comment"># 専門エージェント 3 体</span><br>
-    <span class="dir">　　 ├── skills/</span>　　　<span class="comment"># 再利用可能な手順書 7 本</span><br>
-    <span class="dir">　　 └── hooks/</span>　　　<span class="comment"># 自動実行スクリプト 8 本</span><br>
+    <span class="file">　　 ├── settings.json</span>　<span class="comment"># PM が生成（コア 5・Hook 10 本含む）</span><br>
+    <span class="file">　　 ├── state.md</span>　　　<span class="comment"># bootstrap が生成（タスク状態管理）</span><br>
+    <span class="file">　　 ├── decisions.md</span>　<span class="comment"># bootstrap が生成（決定履歴）</span><br>
+    <span class="file">　　 ├── issues.md</span>　　 <span class="comment"># bootstrap が生成（エラー記録）</span><br>
+    <span class="file">　　 ├── escape.md</span>　　 <span class="comment"># bootstrap が生成（緊急時用）</span><br>
+    <span class="dir">　　 ├── agents/</span>　　　<span class="comment"># 専門エージェント 3 体（段階追加）</span><br>
+    <span class="dir">　　 ├── skills/</span>　　　<span class="comment"># 必須 3 + 推奨 3 Skill（段階追加）</span><br>
+    <span class="dir">　　 └── hooks/</span>　　　<span class="comment"># 自動実行スクリプト 10 本（bootstrap が生成）</span><br>
   </div>
 
   <h3>Phase 4：実装を開始する（Claude Code）</h3>
@@ -1007,9 +1020,9 @@ claude</pre>
     <div class="cmd-card">
       <div class="cmd-header">
         <span class="cmd-name">/audit</span>
-        <span class="cmd-when">月 1 回推奨</span>
+        <span class="cmd-when">月 1 回・必須</span>
       </div>
-      <p class="cmd-desc">ナレッジの陳腐化を確認します。ライブラリのバージョンや MCP の更新をチェックします。</p>
+      <p class="cmd-desc">ナレッジの陳腐化を確認します。ライブラリのバージョン・MCP パッケージ名・xp-rules.md との整合性をチェックします。v7.2 から必須 Skill に昇格しました。</p>
     </div>
   </div>
 
@@ -1082,6 +1095,10 @@ git push</pre>
     <strong>Note</strong>
     教訓は「このプロジェクト固有の対症療法」ではなく、「次のプロジェクトでも通用する抽象化されたルール」にすることが原則です。Claude が自動で判断しますが、最終的にはあなたが承認してから追加されます。
   </div>
+
+  <h3>v7.2 での xp-rules.md について</h3>
+
+  <p>v7.2 への移行にあたり、それまでに蓄積されていた 10 件の教訓がナレッジファイル（pm-zero-claude-knowledge-v7.2.md）に統合されました。<code>xp-rules.md</code> は空の状態からリスタートします。次のプロジェクト完了時から再び教訓を蓄積し始めてください。</p>
 </section>
 
 <!-- ── 困ったとき ── -->
@@ -1139,7 +1156,7 @@ node --version</pre>
   <p>はい。このシステムは非エンジニアを対象に設計されています。コードを書く必要はなく、Claude.ai でアイデアを話し、Claude Code で指示を出すだけで動きます。</p>
 
   <h3>Q. どれくらいのコストがかかりますか？</h3>
-  <p>Claude Pro プラン（$20/月）と Brave Search の無料枠（月 2,000 クエリ）があれば動きます。v7.0 では v6.0 比でトークン消費を 40〜60% 削減する設計にしています。</p>
+  <p>Claude Pro プラン（$20/月）と Brave Search の無料枠（月 2,000 クエリ）があれば動きます。通常作業は Sonnet 4.6 を使用し、Opus 4.7 はエラー解決時のみ /escape 経由で使用する設計でコストを抑えています。</p>
 
   <h3>Q. プロジェクトの途中でアイデアが変わったら？</h3>
   <p>Claude Code で <code>@pm-zero この機能を追加したい</code> と入力してください。追加のインタビューを経て、vision.md の更新案が作成されます。</p>
@@ -1148,13 +1165,16 @@ node --version</pre>
   <p>デフォルトは Next.js 16 / React 19 / TypeScript / Tailwind CSS v4 / pnpm / Vercel です。インタビュー中に変更可能です。</p>
 
   <h3>Q. カスタム指示（Project instructions）に何か入れる必要がありますか？</h3>
-  <p>v7.0 では不要です。すべての設定は <code>pm-zero-claude-knowledge-v7.0.md</code> に統合されています。カスタム指示欄は空白にしてください。</p>
+  <p>v7.2 では不要です。すべての設定は <code>pm-zero-claude-knowledge-v7.2.md</code> に統合されています。カスタム指示欄は空白にしてください。</p>
 
   <h3>Q. /ev と /audit は何が違いますか？</h3>
   <p><code>/ev</code> はプロジェクト完了時に「今回の失敗から学ぶ」コマンドです。<code>/audit</code> は月 1 回、ライブラリのバージョンやナレッジが古くなっていないか確認するメンテナンスコマンドです。</p>
 
   <h3>Q. GitHub リポジトリはどう管理すればいい？</h3>
-  <p>このリポジトリには <code>pm-zero-claude-knowledge-v7.0.md</code>・<code>xp-rules.md</code>・<code>README.md</code>・<code>manual.html</code> の 4 ファイルだけ管理すれば十分です。プロジェクトのコードは別のリポジトリで管理します。</p>
+  <p>このリポジトリには <code>pm-zero-claude-knowledge-v7.2.md</code>・<code>xp-rules.md</code>・<code>README.md</code>・<code>manual.html</code> の 4 ファイルだけ管理すれば十分です。プロジェクトのコードは別のリポジトリで管理します。</p>
+
+  <h3>Q. v7.1 から v7.2 に移行するには？</h3>
+  <p>Claude.ai のプロジェクトナレッジの <code>pm-zero-claude-knowledge-v7.1.md</code> を削除し、<code>pm-zero-claude-knowledge-v7.2.md</code> をアップロードしてください。既存プロジェクトでは <code>.claude/settings.json</code> の SessionStart matcher に <code>clear</code> を追記し、playwright 関連の MCP を <code>@playwright/mcp</code> に修正します。</p>
 </section>
 
 </div><!-- /.content -->
