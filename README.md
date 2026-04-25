@@ -1,381 +1,264 @@
-# PM Zero Claude
+# pm-zero-claude
 
-**非エンジニアのアイデアを、AI が自律実行できる「再現可能な開発プロセス」に変換するシステム。
-使うたびに自分自身が進化し、次のプロジェクトの品質を上げていく。**
+**AI を「指示する道具」から「自律実行できる同僚」に変えるための、再現可能な PM フレームワーク**
 
----
-
-## 一言で言うと
-
-> 「AI に何を・どう指示するか」を標準化し、誰が使っても同じ品質の結果を出す仕組みを作った。
-
-AI コーディングツール（Claude Code）は、入力の質に出力の質が完全に依存する。
-同じツールを使っても、使い方次第で成果に 10 倍の差が生まれる。
-
-PM Zero Claude は、**誰が使っても同じ品質の仕様書セットが出力される仕組み**を設計した。
-リサーチ → インタビュー → 成果物生成 → 実装 → 教訓抽出 → 次回に反映、というサイクルを自動化している。
+[![Version](https://img.shields.io/badge/version-8.0-blue)]()
+[![Platform](https://img.shields.io/badge/platform-Claude_Code_2.1.116+-green)]()
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
 
 ---
 
-## 設計した「仕組み」の全体像
+## 30 秒で理解する
 
-```
-ユーザーの曖昧なアイデア（自然言語）
-        ↓
-  Phase 0: 事前リサーチ（最新 API / フレームワーク / MCP パッケージを検証）
-        ↓
-  構造化インタビュー（4 ステージ / 15〜25 問）
-  ─ 誰が話しても同じ品質の仕様書が出るよう設計
-        ↓
-  成果物パッケージを自動生成（コア 5 + 段階追加 6）
-  ┌─────────────────────────────────────────┐
-  │ [コア 5]                                │
-  │ 仕様書 / 行動規範 / 権限設定             │
-  │ 環境変数テンプレート / 環境初期化スクリプト │
-  │ [段階追加 6]                             │
-  │ タスク状態管理 / 決定履歴 / エラーログ    │
-  │ 専門エージェント / 再利用 Skill / Hooks  │
-  └─────────────────────────────────────────┘
-        ↓
-  AI が自律実装（Claude Code）
-  ─ Permission 質問ゼロで完全自律稼動
-        ↓
-  /ev コマンド → 失敗から教訓を抽出 → ルールとして蓄積
-        ↓
-  次のプロジェクトの行動規範に自動反映
-        ↓
-  プロジェクトを重ねるたびに精度が上がる
-```
+非エンジニアが思いつく曖昧なプロダクトアイデアを、Claude Code（AI コーディングエージェント）が**人間の追加指示なしに最後まで実装できる成果物パッケージ**に変換するための、構造化された PM プロセスです。
+
+入力：「○○ なアプリを作りたい」（自然言語、5〜30 文字）
+↓
+出力：CLAUDE.md / vision.md / settings.json / .env.example / setup.bat ほか **コア 11 ファイル**
+↓
+ユーザーが `claude` を起動すると、AI が自律的にコーディング・テスト・デプロイまで完遂
+
+このシステムは **GitHub で公開**しており、コードベースは**エンジニアでない筆者一人**が、Claude との対話を通じて 7 か月で v1 → v8 まで進化させてきました。
 
 ---
 
-## 3 つの設計上の核心
+## なぜこれが「ただの prompt 集」ではないのか
 
-### 1. プロセスの属人化排除
+LLM ベースのワークフロー設計には、はまりやすい 3 つの罠があります。
 
-AI への指示は「書いた人のセンス」に依存する。PM Zero Claude はこれを排除した。
+| 罠 | 起きること | pm-zero-claude の対処 |
+|----|----------|---------------------|
+| 確率的コンプライアンス | 「ルールを書けば守る」と期待するが、長セッションで Claude は指示を忘れる | **Hook（決定論的強制）** で、Claude が忘れても外部から振る舞いを強制する |
+| コンテキスト管理崩壊 | プロジェクトが進むほど Claude の記憶があやしくなる | **External Memory Architecture** — state.md / decisions.md / issues.md を SSOT として LLM 外に置く |
+| 設計時のハルシネーション | AI が「ある」と主張する機能が実は存在しない | **Phase 0.5 Pre-Design Verification Gate** — 設計案出力前に自己事実検査 |
 
-- **Phase 0 リサーチゲート**：インタビュー前に最新仕様・パッケージ名・API 制限を必ず調査
-- **構造化インタビュー**：誰がアイデアを出しても、同じ 4 ステージ・同じ質問で仕様書が生成される
-- **外部状態管理**：タスクの進捗・API キーの作成履歴・エラーログをファイルに記録し、担当者が変わっても引き継げる
-- **暗黙知の可視化**：「なぜこの設計にしたか」を decisions.md に自動記録。後から参照可能
-
-```
-❌ 担当者の記憶に依存する進捗管理
-✅ state.md / decisions.md / issues.md の 3 ファイルで外部化
-   → セッションが終わっても、週が変わっても、状態が消えない
-```
-
-### 2. 確率的遵守と確定的強制の分離
-
-AI に「必ずやれ」と文書で指示しても、AI は確率的にしか従わない。
-ルールを 2 種類に分類し、それぞれ適切な強制手段を選んだ。
-
-| ルールの種類 | 強制手段 | 遵守率 |
-|---|---|---|
-| 判断を伴うルール（設計方針・エラー対応） | CLAUDE.md（指示文書） | 確率的 |
-| 判断不要な機械的ルール（フォーマット・ビルド・エラー記録） | Hooks（自動実行スクリプト） | **100%** |
-
-ファイル保存のたびに Hooks が自動で prettier / 型チェック / エラー記録を実行する。
-AI のトークンをゼロ消費で、人間が見落としがちなエラーを確定的に検知できる。
-
-### 3. 失敗から学ぶ自己進化サイクル
-
-プロジェクト完了時に `/ev` コマンドを実行すると、AI がエラーログを分析し、再発防止ルールを自動抽出する。
-
-```
-## XP-4: 古い学習データに基づく KEY 名・UI 案内の失敗
-
-- 発生状況: 外部サービスの API キー取得手順を案内する時
-- 根本原因: Claude の学習データ後にサービスの UI が変更されている
-- ルール: 外部サービスの設定を指示する前 → 必ず Web 検索で最新 UI を確認する
-```
-
-抽出されるルールには原則がある。「このプロジェクト固有の対症療法」は棄却し、
-「次のプロジェクトでも通用する抽象化されたルール」のみを採用する。
+これらは Anthropic 自身が 2026 年に **公式に問題として認めた**事項と同じ問題系です（cf. [2026-04-24 Anthropic Engineering Blog: Claude Code Quality Post-Mortem](https://claude.com/) ）。pm-zero-claude は、これらの問題が公式に認知される**以前から**、ユーザー側の設計で対処してきました。
 
 ---
 
-## v7.3 アップデート案の判断記録
-
-v7.3 ではユーザーから 4 つのアップデート案が提示された。それぞれの判断根拠を示す。
-
-### ① Permission 質問の完全排除 → **採用・最優先**
-
-**提案：** コーディング中に Claude から git push やファイル書き込みの許可確認が来るのを一切なくしたい。
-
-**判断根拠：** 実際の問題を調査したところ、原因が 2 層に分かれることが判明した。
-
-- `settings.json` の `defaultMode: "bypassPermissions"` は **VSCode 拡張でバグあり**（GitHub #34923, #29026）。設定しても質問が来る。
-- 確実に機能するのは CLI 起動時の `--permission-mode bypassPermissions` フラグのみ。
-
-**設計：** CLI フラグによるバイパスを Layer 1、deny リストによる安全網を Layer 2 とする 2 層戦略を採用した。
+## アーキテクチャ（v8.0：3 層モデル）
 
 ```
-Layer 1: claude --permission-mode bypassPermissions  ← 全 Permission 質問を消す
-Layer 2: settings.json の deny リスト               ← rm -rf / git push --force 等は物理ブロック
+┌──────────────────────────────────────────────────────┐
+│ Layer 1: Policy（≤ 80 行）                            │
+│   CLAUDE.md ─ 最小ルータ。詳細は @-imports で読み込み │
+└──────────────────────────────────────────────────────┘
+                       │
+┌──────────────────────────────────────────────────────┐
+│ Layer 2: External Memory（永続 / SSOT）               │
+│   vision.md  state.md  decisions.md  issues.md       │
+│   escape.md  xp-rules.md                              │
+│   ─ LLM のコンテキストウィンドウ外に置かれた記憶      │
+│   ─ MIT RLM / Anthropic Managed Agents Memory と     │
+│     収束する設計思想                                   │
+└──────────────────────────────────────────────────────┘
+                       │
+┌──────────────────────────────────────────────────────┐
+│ Layer 3: Execution（決定論的強制 + 役割分業）         │
+│   .claude/                                            │
+│   ├─ settings.json   権限 + Hook 7 種                 │
+│   ├─ rules/          globs: で選択ロード（Karpathy 等）│
+│   ├─ agents/         Tier 1 × 5（PM 役割分業）         │
+│   ├─ skills/         /resume /escape /audit etc.      │
+│   └─ hooks/          .mjs（Node、Windows 互換）        │
+└──────────────────────────────────────────────────────┘
 ```
 
-これまで一度も「本当に危ない許可」が来なかったというユーザーの実績と、deny リストの存在が根拠。
+3 つの層を分離した結果、**「ルールに従わない問題」「記憶を失う問題」「事実誤認の問題」**をそれぞれ独立に攻略できる構造になっています。
 
 ---
 
-### ② プロエンジニア協働を前提としたコーディング → **採用・設計に統合**
-
-**提案：** できるだけシンプルなコード、他のエンジニアがテスト・デバッグしやすい前提で書く。
-
-**判断根拠：** 2026 年に公開された 14 年キャリアのプリンシパルエンジニアによる 120 時間の実証研究（Claude Code vs Codex 比較）で、**「同一セッションで生成したコードは、そのコードのレビューに測定可能に劣る」** という知見が得られている。
-
-**設計：** 3 つのレイヤーで対応した。
+## ワークフロー（PM Phase）
 
 ```
-1. Fresh-Review パターン
-   → pr-reviewer subagent に isolation: worktree を設定
-   → レビューは history ゼロの新規 context で実施（実装と隔離）
-
-2. TDD ファースト設計
-   → test-writer（RED）と implementer（GREEN）を分離
-   → 同じ context でテストと実装を書かせない
-
-3. 専門 Subagent の Tier 化
-   → Tier 1: planner / test-writer / implementer / pr-reviewer / docs-writer
-   → Tier 2: architect / security-reviewer / debugger / refactorer（タスク型自動トリガー）
+[Phase 0: 事前リサーチ]      web_search で技術スタック・API・MCP の最新仕様確認
+        │
+[Phase 0.5: 自己検証]        架空機能・矛盾・バージョン依存の主張を自己検査
+        │
+[Phase 1: 4 段階インタビュー]  目的 → 範囲 → 振る舞い(Given/When/Then) → 制約
+        │                    （1 ターン 3-5 問のバッチ質問でトークン削減）
+        │
+[Phase 2-A: コア 3 出力]      CLAUDE.md + vision.md + .env.example
+        │
+[Phase 2-B: 実行環境 3 出力]  settings.json + setup.bat + .mcp.json
+        │
+[Phase 2-C: 段階追加]         agents / skills / hooks / rules（必要に応じて）
+        │
+[ユーザー]                   フォルダ作成 → ファイル配置 → claude 起動
+        │
+[Claude Code]                自律実装・テスト・デプロイ
+        │
+[完了後 /ev]                  教訓抽出 → xp-rules.md → 次プロジェクトで再利用
 ```
-
----
-
-### ③ bootstrap.ps1 の代替 → **採用・setup.bat に置換**
-
-**提案：** bootstrap.ps1 は何度やっても動かなかったので、別の選択肢を探してほしい。
-
-**判断根拠：** PS 実行ポリシー・UTF-8 BOM・SmartScreen という 3 つの独立した障害が重なっており、非エンジニアにとって突破困難。
-
-**設計：** Windows 10 1803 以降に組み込み済みの `cmd.exe`（`.bat`）のみを使う方式に変更した。
-
-```batch
-@echo off
-mkdir .claude 2>nul
-mkdir .claude\hooks 2>nul
-mkdir .claude\agents 2>nul
-mkdir .claude\skills 2>nul
-mkdir .claude\rules 2>nul
-echo Directory structure created.
-echo Next: place files, then run: claude --permission-mode bypassPermissions
-```
-
-- ASCII only → エンコーディング問題なし
-- 実行ポリシー不要 → 管理者権限不要
-- SmartScreen 警告なし（`.bat` は `.ps1` より信頼度高）
-- **ユーザーがやることは「ダブルクリック」のみ**
-
-bootstrap.ps1 は互換性のため deprecated fallback として保持。
-
----
-
-### ④ ナレッジファイルのコンテキスト量 → **採用・37% 削減**
-
-**提案：** ナレッジファイルは設計意図も含めて詳しくすべきか、それともシンプルにすべきか？
-
-**判断根拠：** 公式ドキュメント（`code.claude.com/docs/en/memory`）に「CLAUDE.md は 200 行未満」と明記。実測では 2,800 行 → 180 行で初応答時間が 10-12 秒 → 3-5 秒に短縮。「CLAUDE.md は system prompt ではなく user message として注入される」という仕組み上、長くなるほどコンプライアンス率が低下する。
-
-**設計：** ナレッジファイルをルール・スキーマ中心に圧縮。設計経緯・バージョン変更履歴は削除。
-
-```
-v7.2: 920 行 / 43KB / ~17,200 tokens（概算）
-v7.3: 726 行 / 27KB / ~10,900 tokens（概算）
-
-削減率: 37% バイト削減 / 40% トークン削減
-```
-
-「余分なテキストも含めるべき？」という問いに対する答えは「No」。PM agent に必要なのは判断根拠ではなく、判断軸そのもの。
-
----
-
-## v7.2 → v7.3 の変更点
-
-### 検証で発見した致命欠陥の修正
-
-v7.3 のリサーチ・ファクトチェックで、v7.2 の設計から以下の不正確な記述が判明した。
-
-```
-❌ v7.2 の問題点（他の AI モデルが作ったと仮定して冷徹に批判）：
-
-1. exit 2 = 常にブロック と説明していた
-   → 公式ではイベントごとに挙動が異なる（PreToolUse はブロック、
-     UserPromptSubmit はコンテキスト注入のみ）
-
-2. .claude/rules/ で paths: frontmatter を推奨していた
-   → GitHub #17204, #16299, #23478 のバグで実際には動作しない
-   → 正しくは globs: を使う
-
-3. .claudeignore をネイティブ機能として案内していた
-   → 公式機能ではない。npm パッケージ（PreToolUse Hook の実装）
-   → The Register の実証実験でも無視されることが確認済み
-
-4. settings.json の defaultMode: bypassPermissions に依存した設計
-   → VSCode 拡張でバグあり（#34923, #29026）
-   → CLI flag が唯一の確実手段
-
-5. Hook イベントを 26 種類と記載
-   → 公式ドキュメントで 27 種類を確認
-   → UserPromptExpansion, CwdChanged, TaskCreated が不足していた
-
-✅ v7.3 の修正：
-   上記 5 点をすべて公式ドキュメントで検証・修正済み
-```
-
-### 主要変更点（10 項目）
-
-| 変更 | v7.2 | v7.3 |
-|---|---|---|
-| Permission 排除 | 部分的な allow リスト | CLI フラグ + deny リスト 2 層戦略 |
-| 起動コマンド | `claude` | `claude --permission-mode bypassPermissions` |
-| bootstrap | bootstrap.ps1（失敗多発） | setup.bat（ダブルクリックのみ） |
-| ナレッジ容量 | 920 行 / 43KB | 726 行 / 27KB（37% 削減） |
-| CLAUDE.md | 60-100 行 | ≤100 行シンルータ（XML タグ構造化） |
-| Rules ディレクトリ | 非採用 | `.claude/rules/*.md`（`globs:` frontmatter） |
-| exit 2 説明 | 常にブロック | イベント別挙動（正確化） |
-| Subagent 設計 | 3 agent（pm-zero / env-setup / verifier） | Tier 1 × 5 + Tier 2 × 4（fresh-review パターン） |
-| pr-reviewer | なし | `isolation: worktree` で history ゼロ査読 |
-| Hook イベント | 26 種 | 27 種（公式確認済み） |
-
----
-
-## 定量的効果
-
-| 改善点 | 効果 |
-|---|---|
-| ナレッジファイルのトークン削減 | **40% 削減**（17,200 → 10,900 tokens 概算） |
-| Permission 質問ゼロ化 | 承認待ち時間ゼロ / 中断なし完全自律稼動 |
-| setup.bat（ダブルクリック） | セットアップ失敗率の大幅低減 |
-| インタビューバッチ設計（3〜5 問/ターン） | インタビューコスト 75% 削減 |
-| Hooks による確定的テスト自動化 | エラーの 80% をゼロトークンで検知 |
-| Fresh-Review パターン（worktree 隔離） | レビュー品質の測定可能な向上 |
-| globs: ルール分散（`.claude/rules/`） | CLAUDE.md の関係ないルールを排除 |
-| Playwright MCP → Tool Search 委任 | 検証トークン ~85% 削減（公式） |
-| **合計** | **v6.0 比 45〜65% コスト削減（推定）** |
-
----
-
-## 開発の経緯
-
-| バージョン | 主な変化 |
-|---|---|
-| v1〜v4 | 基本的な要件定義フォーマットの模索 |
-| v5.0 | 5 成果物パッケージ・インタビュー構造の確立 |
-| v6.0 | トークン最適化・Hooks 導入・MCP 構成の整備 |
-| v7.0 | 状態の外部化・マルチエージェント・自己進化 Skill の完全実装 |
-| v7.2 | 公式仕様照合による致命欠陥修正・Phase 0 リサーチゲート標準化 |
-| **v7.3（現在）** | **Permission 完全排除・setup.bat 移行・Fresh-Review パターン・公式ファクトチェック** |
-
----
-
-## ファイル構成
-
-```
-pm-zero-claude/
-├── pm-zero-claude-knowledge-v7.3.md  # PM エージェントの知識ベース（Claude.ai にアップロード）
-├── xp-rules.md                        # プロジェクト横断で蓄積される実践知
-└── README.md                          # このファイル
-
-# 新規プロジェクト開始時に生成される構成（参考）
-project/
-├── CLAUDE.md              # ≤100 行シンルータ（XML タグ構造化）
-├── vision.md              # 仕様・受入基準・タスク分解
-├── .env.example           # 必要な API キー一覧
-├── setup.bat              # ディレクトリ構造作成（ダブルクリックのみ）
-├── .mcp.json              # プロジェクト MCP 定義（cmd /c 形式）
-└── .claude/
-    ├── settings.json        # 権限（deny リスト）+ 10 Hook 定義
-    ├── settings.local.json  # .gitignore 対象
-    ├── state.md / decisions.md / issues.md / escape.md
-    ├── rules/               # globs: frontmatter でパススコープ
-    ├── agents/              # Tier 1 × 5 + Tier 2 × 4
-    ├── skills/              # 必須 3 + 推奨 3
-    └── hooks/               # 自動実行スクリプト 10 本
-```
-
----
-
-## 使い方
-
-### 1. セットアップ（1 回のみ）
-
-Claude.ai でプロジェクトを作成し、2 ファイルをナレッジにアップロードする。
-
-```
-ナレッジ ← pm-zero-claude-knowledge-v7.3.md
-ナレッジ ← xp-rules.md
-```
-
-グローバル MCP を登録する（PowerShell で実行）。
-
-```powershell
-# 公式ドキュメント参照 MCP
-claude mcp add-json context7 -s user '{"type":"stdio","command":"cmd","args":["/c","npx","-y","@upstash/context7-mcp@latest"]}'
-
-# Web 検索 MCP
-claude mcp add-json brave-search -s user '{"type":"stdio","command":"cmd","args":["/c","npx","-y","@brave/brave-search-mcp-server"],"env":{"BRAVE_API_KEY":"<your-key>"}}'
-```
-
-グローバル settings.json を更新する（PowerShell で実行）。
-
-```powershell
-$content = '{"env":{"CLAUDE_CODE_USE_POWERSHELL_TOOL":"1","CLAUDE_AUTOCOMPACT_PCT_OVERRIDE":"45"}}'
-$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-[System.IO.File]::WriteAllText("$env:USERPROFILE\.claude\settings.json", $content, $utf8NoBom)
-```
-
-### 2. アイデアを話す
-
-Claude.ai のプロジェクトに作りたいものを 1〜2 文で伝える。
-PM エージェントが **Phase 0 リサーチ**（最新フレームワーク・API・MCP パッケージを調査）を実施してから
-4 ステージ（目的→範囲→振る舞い→制約）で 15〜25 問インタビューし、成果物を生成する。
-
-### 3. セットアップして起動する
-
-```
-# 受け取ったファイルをプロジェクトフォルダに配置
-# setup.bat をダブルクリック（ディレクトリ構造が作成される）
-# .env.local に API キーを記入
-
-# Claude Code を起動（Permission 質問ゼロ）
-claude --permission-mode bypassPermissions
-```
-
-### 4. 教訓を蓄積する（プロジェクト完了時）
-
-```bash
-/ev
-# エラーログを分析 → 再発防止ルールを抽出 → xp-rules.md 用に出力
-# xp-rules.md を Claude.ai に再アップロードで次回から自動反映
-```
-
----
-
-## 特殊コマンド
-
-| コマンド | タイミング | 処理内容 |
-|---|---|---|
-| `/resume` | 長期中断後の再開時 | 状態ファイルと実コードを照合し現状を報告 |
-| `/escape` | エラーが 3 回解決しない時 | 試行履歴を記録 → Opus 4.7 へエスカレーション |
-| `/audit` | 月 1 回推奨 | ナレッジの陳腐化チェックと更新案の提示 |
-| `/ev` | プロジェクト完了時 | 教訓抽出 → xp-rules.md 更新 + README.md 生成 |
-| `/env-guide` | 外部 API key 設定時 | 最新 UI を前提にした取得手順を生成 |
-| `/console-debug` | ブラウザエラーが解決しない時 | コンソール出力の取得方法を案内し原因を特定 |
 
 ---
 
 ## 技術スタック
 
-**PM システム（このリポジトリ）**
-Claude.ai Project · Claude Opus 4.7 / Sonnet 4.6 · Claude Code · Windows + PowerShell 5.1/7+
+| 領域 | 採用技術 | 採用根拠 |
+|------|--------|--------|
+| AI モデル基盤 | Claude Opus 4.7（設計） / Sonnet 4.6（実装） | コスト最適化：Sonnet が解決できないときのみ Opus |
+| エージェント実行 | Claude Code v2.1.116+ | 公式 CLI、Hook / Subagent / MCP / Skill すべて活用 |
+| 確定的ルール | Hook（公式機能） | LLM の確率的不遵守を Hook で外部強制 |
+| 記憶 | filesystem-based memory | RLM / Managed Agents と同型の設計 |
+| 役割分業 | Subagent + `isolation: worktree` | レビューを fresh context で行う安全設計 |
+| ドキュメント参照 | context7 MCP | ライブラリ仕様の最新版を自動取得 |
+| プロジェクト基盤 | Next.js + TypeScript strict + pnpm + Vercel | 標準スタック |
+| 開発環境 | Windows + VSCode + PowerShell | ユーザー実環境に最適化 |
 
-**生成されるプロジェクトの前提スタック**（バージョンは Phase 0 で都度検証）
-Next.js（App Router）· React · TypeScript strict · Tailwind CSS v4 · pnpm · Node.js 24.x · Vercel
+---
+
+## 数値で見る pm-zero-claude
+
+| 指標 | 値 | 比較対象 |
+|------|----|------|
+| CLAUDE.md 行数（目標） | ≤ 80 行 | 公式推奨 200 行以下 |
+| Phase 1 質問数（圧縮後） | 15-25 問 | v5 比 70-90% トークン削減 |
+| Hook 数（v8.0） | 7 種 | v7.3 の 10 種から削減 |
+| Tier 1 Subagent 数 | 5 | 役割を絞り、context 汚染を防ぐ |
+| 必須 MCP サーバー数 | 2 | コア（context7 + playwright）に絞る |
+| 自己進化サイクル | プロジェクト完了ごと `/ev` → xp-rules.md（上限 10） | 知識のスケーラブル蓄積 |
+
+---
+
+## 設計上の特徴的な判断
+
+### ① Karpathy 4 原則の組み込み
+
+GitHub 50K+ stars を獲得した [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills)（65 行）の 4 原則を、`.claude/rules/karpathy.md` に `globs: "**"` で全ファイル適用。「Surface Tradeoffs / Surgical Changes / Goal-Driven Execution」を AI コーディングの基本姿勢として組み込みます。
+
+### ② 事実検証を設計プロセスに組み込む（Phase 0.5）
+
+ユーザーが ChatGPT / Gemini / DeepSeek の 3 モデルに同じ依頼をしたところ、各モデルが**架空の機能**（存在しない MCP サーバー、未確認の RFC 番号、Pro プランで使えない Auto Mode 等）を含む設計案を出力しました。pm-zero-claude v8.0 はこれを Phase 0.5 で出力前に検出します。
+
+### ③ Pro プラン制約の遵守
+
+多くの公開ノウハウは Max プラン以上を前提にしています。pm-zero-claude は **$20/月の Pro プランで動作する**ことを設計制約として、利用不可機能（Auto Mode、Managed Agents API）を排除しています。
+
+### ④ Anthropic 公式バグの知見を反映
+
+2026-04-24 に Anthropic が公式に認めた「思考履歴消失バグ」（2026-03-26 〜 04-10 期間）を踏まえ、Claude Code v2.1.116 以上を必須として明示。state.md SSOT 設計の重要性を再強調しています。
+
+---
+
+## 自己進化システム
+
+```
+プロジェクト完了
+    │
+    ▼
+/ev コマンド実行
+    │
+    ▼
+issues.md（失敗ログ）+ decisions.md（成功知見）から教訓候補を抽出
+    │
+    ▼
+ユーザー合議の上、xp-rules.md に追記（上限 10 項目、超えたら統廃合）
+    │
+    ▼
+次プロジェクトの CLAUDE.md / .claude/rules/ に反映
+```
+
+このループは Anthropic が 2026-04-23 に public beta 公開した [Memory on Claude Managed Agents](https://www.anthropic.com/engineering/managed-agents) と **同じ設計哲学**（filesystem-based、auditable、exportable）に独立に到達しました。pm-zero-claude は v5 の段階で既にこの構造を持っています。
+
+---
+
+## バージョン履歴（要約）
+
+| Version | リリース | 主要変更 |
+|---------|---------|--------|
+| v1 〜 v4 | 2025 | プロンプト集としての出発 |
+| v5 | 2025 後半 | xp-rules.md による自己進化導入 |
+| v6 | 2026-初 | Hook 導入、決定論的ルール強制 |
+| v7.0 〜 v7.2 | 2026-03 〜 04 | Subagent / Skill / MCP の体系化 |
+| v7.3 | 2026-04-22 | Permission 完全自動化（CLI flag + deny リスト二層） |
+| **v8.0** | **2026-04-25** | **External Memory Architecture / Karpathy 4 原則 / Phase 0.5 Pre-Design Verification Gate** |
+
+---
+
+## 実環境での動作
+
+- **OS**: Windows 11
+- **エディタ**: VS Code
+- **ターミナル**: PowerShell 5.1 / 7
+- **Claude Code**: v2.1.116 以上
+- **Claude プラン**: Pro（$20/月）
+
+---
+
+## ファイル構成（リポジトリ）
+
+```
+pm-zero-claude/
+├── pm-zero-claude-knowledge-v8.0.md  ← Claude.ai Project Knowledge にアップロード
+├── README.md                          ← 本ファイル
+├── xp-rules.md                        ← プロジェクト横断教訓
+├── templates/                         ← v8.0 で生成される成果物テンプレート
+│   ├── CLAUDE.md
+│   ├── vision.md
+│   ├── .env.example
+│   ├── setup.bat
+│   ├── .mcp.json
+│   └── .claude/
+│       ├── settings.json
+│       ├── rules/
+│       │   ├── karpathy.md
+│       │   ├── coding-standards.md
+│       │   └── testing.md
+│       ├── agents/  (Tier 1 × 5)
+│       ├── skills/  (必須 3)
+│       └── hooks/   (7 種)
+└── docs/
+    ├── architecture.md
+    ├── changelog.md
+    └── design-decisions.md
+```
+
+---
+
+## 使い方（要約）
+
+1. このリポジトリを Claude.ai でプロジェクトとして作成
+2. `pm-zero-claude-knowledge-v8.0.md` を Project Knowledge にアップロード
+3. プロジェクトチャットで「○○ なアプリを作りたい」と入力
+4. PM agent が Phase 0 〜 2 を実行、成果物パッケージを生成
+5. ローカル環境にファイルを配置、`claude --permission-mode bypassPermissions` で起動
+6. Claude Code が自律実装
+
+---
+
+## 哲学
+
+**「AI に長文を覚えさせる」設計ではなく、「正しい情報を引く・正しい責務に振る・正しい検証を自動化する」設計に切り替える。**
+
+LLM の能力は急速に向上しますが、**コンテキストウィンドウは増えてもコンテキスト管理の難しさは消えません**。MIT の Recursive Language Models (2026-01) や Anthropic の Managed Agents Memory (2026-04) が示唆するのは、**LLM 自身が記憶を持つのではなく、LLM の外側に永続記憶を置き、LLM はそれをプログラム的に操作する**という構造です。pm-zero-claude はこの構造を、Pro プランの制約下で再現可能に実装した一例です。
+
+---
+
+## 想定される評価ポイント（採用担当者向け）
+
+このプロジェクトを評価する際のポイントとして：
+
+1. **再現性**：他の人が同じ手順で同じ品質の成果物を得られる構造になっているか
+2. **第一原理思考**：なぜこの設計なのかが、AI モデルの確率的振る舞いの限界という第一原理から導出されているか
+3. **事実ベースの設計**：架空機能を含めず、公式ドキュメント・公開研究を出典として明示しているか
+4. **継続的改善**：xp-rules.md を通じた自己進化ループが、属人的でない仕組みとして組み込まれているか
+5. **制約下での最適化**：Pro プラン（$20/月）という具体的制約に対して、トークン経済を悪化させずに設計品質を最大化しているか
 
 ---
 
 ## ライセンス
 
 MIT
+
+## 作者
+
+[snowtone-ai](https://github.com/snowtone-ai)
+
+## 参考文献
+
+- [Anthropic Claude Code Documentation](https://code.claude.com/docs)
+- [Karpathy / Forrest Chang: andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills)
+- [MIT CSAIL: Recursive Language Models (arXiv:2512.24601)](https://arxiv.org/abs/2512.24601)
+- [Anthropic: Scaling Managed Agents (2026-04)](https://www.anthropic.com/engineering/managed-agents)
+- [Anthropic Claude Code Post-Mortem (2026-04-24)](https://claude.com/blog/)
