@@ -1,8 +1,24 @@
-# pm-zero-claude v9.0
+# pm-zero-claude
 
-**Vendor-neutral Agent Operating System** — 非エンジニアの自然言語アイデアを、Claude Code または Codex CLI が自律実行できる成果物パッケージに変換するPMフレームワーク。
+**AI を「指示する道具」から「自律実行できる同僚」に変えるための、再現可能な PM フレームワーク**
 
-> v8.0は Claude Code 専用のPMフレームワークでした。v9.0では Codex CLI にも対応し、AIが「動くコード」ではなく「変更に耐えるコード」を生成するよう、OS側から品質を強制します。
+[![Version](https://img.shields.io/badge/version-8.0-blue)]()
+[![Platform](https://img.shields.io/badge/platform-Claude_Code_2.1.116+-green)]()
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)]()
+
+---
+
+## 30 秒で理解する
+
+非エンジニアが思いつく曖昧なプロダクトアイデアを、Claude Code（AI コーディングエージェント）が**人間の追加指示なしに最後まで実装できる成果物パッケージ**に変換するための、構造化された PM プロセスです。
+
+入力：「○○ なアプリを作りたい」（自然言語、5〜30 文字）
+↓
+出力：CLAUDE.md / vision.md / settings.json / .env.example / setup.bat ほか **コア 11 ファイル**
+↓
+ユーザーが `claude` を起動すると、AI が自律的にコーディング・テスト・デプロイまで完遂
+
+このシステムは **GitHub で公開**しており、コードベースは**エンジニアでない筆者一人**が、Claude との対話を通じて 7 か月で v1 → v8 まで進化させてきました。
 
 ---
 
@@ -130,138 +146,86 @@ codex --sandbox danger-full-access
 
 ---
 
-## 生成されるファイル一覧（全58ファイル）
+## 技術スタック
 
-<details>
-<summary>L1: OS Kernel（4ファイル）</summary>
-
-- `AGENTS.md` — 一次指示書（≤80行、AAIF標準）
-- `CLAUDE.md` — Claude Adapter（≤30行、@import AGENTS.md）
-- `CODEX.md` — Codex補足（任意）
-- `OS-KERNEL.md` — OS思想・共通原則
-
-</details>
-
-<details>
-<summary>L2-L3: Routing & Adapter（4ファイル）</summary>
-
-- `MODEL-ROUTING.md` — モデル配分3パターン
-- `CLI-ADAPTERS.md` — CLI差分吸収マトリクス
-- `.claude/settings.json` — Claude設定（hook + deny list）
-- `.codex/config.toml` — Codex設定（approval_policy + sandbox_mode + hooks）
-
-</details>
-
-<details>
-<summary>L4: External Memory（7ファイル、v8.0継承）</summary>
-
-- `vision.md` — 仕様（Given/When/Then）
-- `state.md` — 現在状態（SSOT）
-- `decisions.md` — 永続判断 + **実在例URL（v9.0）**
-- `issues.md` — 失敗ログ
-- `escape.md` — エスカレーション履歴
-- `xp-rules.md` — プロジェクト横断教訓（≤10項目）
-- `design-notes.md` — 将来変更可能性（**v9.0新規**）
-
-</details>
-
-<details>
-<summary>L5-L9（7ファイル）</summary>
-
-- `.mcp.json` — MCP設定（playwright + context7）
-- `VERIFICATION.md` — 自己検証パイプライン仕様
-- `scripts/verify.mjs` — 統一検証エントリ（両CLI共通）
-- `scripts/sync-claude-md.mjs` — AGENTS.md→CLAUDE.md同期
-- `SECURITY.md` — deny / guardrail
-- `HANDOFF-JA.md` — 日本語Handoffテンプレ
-- `MIGRATION.md` — v8→v9移行手順
-
-</details>
-
-<details>
-<summary>L10: Quality Gate（4ファイル）</summary>
-
-- `CODE-QUALITY.md` — コード品質基準
-- `ARCHITECTURE-RULES.md` — レイヤ分離・依存方向
-- `REVIEW-GATE.md` — レビュー規則
-- `REFERENCE-GUIDE.md` — Reference-First運用（**v9.0新規**）
-
-</details>
-
-<details>
-<summary>Claude rules / agents / skills / hooks（22ファイル）</summary>
-
-**rules**: karpathy.md / coding-standards.md / testing.md
-
-**agents**: planner / test-writer / implementer / architect-reviewer / refactor-reviewer★ / playwright-verifier★ / docs-writer
-
-**skills**: resume / escape / audit / reference★ / ev / env-guide / console-debug / verify
-
-**hooks**: inject-state / freeze-state / format-and-update / log-error / block-dangerous / stop-guard / check-japanese★ / check-state
-
-（★ = v9.0新規）
-
-</details>
-
-<details>
-<summary>Codex hooks / Setup（6ファイル）</summary>
-
-- `.codex/hooks/inject-state.mjs`
-- `.codex/hooks/stop-guard.mjs`
-- `.codex/hooks/check-japanese.mjs`
-- `setup.bat`
-- `.env.example`
-- `.gitignore`
-
-</details>
+| 領域 | 採用技術 | 採用根拠 |
+|------|--------|--------|
+| AI モデル基盤 | Claude Opus 4.7（設計） / Sonnet 4.6（実装） | コスト最適化：Sonnet が解決できないときのみ Opus |
+| エージェント実行 | Claude Code v2.1.116+ | 公式 CLI、Hook / Subagent / MCP / Skill すべて活用 |
+| 確定的ルール | Hook（公式機能） | LLM の確率的不遵守を Hook で外部強制 |
+| 記憶 | filesystem-based memory | RLM / Managed Agents と同型の設計 |
+| 役割分業 | Subagent + `isolation: worktree` | レビューを fresh context で行う安全設計 |
+| ドキュメント参照 | context7 MCP | ライブラリ仕様の最新版を自動取得 |
+| プロジェクト基盤 | Next.js + TypeScript strict + pnpm + Vercel | 標準スタック |
+| 開発環境 | Windows + VSCode + PowerShell | ユーザー実環境に最適化 |
 
 ---
 
-## Top-Engineer Code Quality Gate（7ゲート）
+## 数値で見る pm-zero-claude
 
-AIが完了報告するには、以下7ゲートを**すべて**通過する必要があります。
-
-```
-✅ Code Gate         関数長≤50行 / ファイル長≤300行 / 命名禁止語 / エラーハンドリング
-✅ Architecture Gate レイヤ依存方向 / 循環依存0件 / 過剰抽象化検出
-✅ Test Gate         新機能=新テスト / negative path / console error 0件
-✅ Error Gate        catch-and-ignore禁止 / 失敗ケース仕様化
-✅ Review Gate       architect-reviewer / refactor-reviewer / cross-vendor review
-✅ Reference Gate    実在例3件以上参照 → decisions.md記録（★v9.0）
-✅ Handoff Gate      日本語報告 / HANDOFF-JA.mdテンプレ準拠
-```
+| 指標 | 値 | 比較対象 |
+|------|----|------|
+| CLAUDE.md 行数（目標） | ≤ 80 行 | 公式推奨 200 行以下 |
+| Phase 1 質問数（圧縮後） | 15-25 問 | v5 比 70-90% トークン削減 |
+| Hook 数（v8.0） | 7 種 | v7.3 の 10 種から削減 |
+| Tier 1 Subagent 数 | 5 | 役割を絞り、context 汚染を防ぐ |
+| 必須 MCP サーバー数 | 2 | コア（context7 + playwright）に絞る |
+| 自己進化サイクル | プロジェクト完了ごと `/ev` → xp-rules.md（上限 10） | 知識のスケーラブル蓄積 |
 
 ---
 
-## モデル配分（3パターン）
+## 設計上の特徴的な判断
 
-<details>
-<summary>Pattern A：Claude Pro + ChatGPT Plus 併用（月$40・推奨）</summary>
+### ① Karpathy 4 原則の組み込み
 
-| フェーズ | モデル |
-|---|---|
-| リサーチ / Reference検索 | GPT-5.5 Thinking |
-| 要件定義 / 設計 | Claude Opus 4.7 |
-| Codex CLI 実装 | GPT-5.5（reasoning=high） |
-| 軽量修正 / サブエージェント | GPT-5.4-mini |
-| Cross-vendor レビュー | Opus 4.7 + GPT-5.5（両方） |
-| 日本語最終案内 | Claude Sonnet 4.6 |
+GitHub 50K+ stars を獲得した [forrestchang/andrej-karpathy-skills](https://github.com/forrestchang/andrej-karpathy-skills)（65 行）の 4 原則を、`.claude/rules/karpathy.md` に `globs: "**"` で全ファイル適用。「Surface Tradeoffs / Surgical Changes / Goal-Driven Execution」を AI コーディングの基本姿勢として組み込みます。
 
-</details>
+### ② 事実検証を設計プロセスに組み込む（Phase 0.5）
 
-<details>
-<summary>Pattern B：Claude Pro のみ（月$20）</summary>
+ユーザーが ChatGPT / Gemini / DeepSeek の 3 モデルに同じ依頼をしたところ、各モデルが**架空の機能**（存在しない MCP サーバー、未確認の RFC 番号、Pro プランで使えない Auto Mode 等）を含む設計案を出力しました。pm-zero-claude v8.0 はこれを Phase 0.5 で出力前に検出します。
 
-実装CLIはClaude Code。AGENTS.mdを維持しつつCLAUDE.mdを実行入口にする。計画にOpus 4.7、通常実装にSonnet 4.6、軽量にHaiku 4.5を配分。
+### ③ Pro プラン制約の遵守
 
-</details>
+多くの公開ノウハウは Max プラン以上を前提にしています。pm-zero-claude は **$20/月の Pro プランで動作する**ことを設計制約として、利用不可機能（Auto Mode、Managed Agents API）を排除しています。
 
-<details>
-<summary>Pattern C：ChatGPT Plus のみ（月$20）</summary>
+### ④ Anthropic 公式バグの知見を反映
 
-実装CLIはCodex CLI。設計にGPT-5.5 Thinking、通常実装にGPT-5.5、軽量にGPT-5.4-miniを配分。
+2026-04-24 に Anthropic が公式に認めた「思考履歴消失バグ」（2026-03-26 〜 04-10 期間）を踏まえ、Claude Code v2.1.116 以上を必須として明示。state.md SSOT 設計の重要性を再強調しています。
 
-</details>
+---
+
+## 自己進化システム
+
+```
+プロジェクト完了
+    │
+    ▼
+/ev コマンド実行
+    │
+    ▼
+issues.md（失敗ログ）+ decisions.md（成功知見）から教訓候補を抽出
+    │
+    ▼
+ユーザー合議の上、xp-rules.md に追記（上限 10 項目、超えたら統廃合）
+    │
+    ▼
+次プロジェクトの CLAUDE.md / .claude/rules/ に反映
+```
+
+このループは Anthropic が 2026-04-23 に public beta 公開した [Memory on Claude Managed Agents](https://www.anthropic.com/engineering/managed-agents) と **同じ設計哲学**（filesystem-based、auditable、exportable）に独立に到達しました。pm-zero-claude は v5 の段階で既にこの構造を持っています。
+
+---
+
+## バージョン履歴（要約）
+
+| Version | リリース | 主要変更 |
+|---------|---------|--------|
+| v1 〜 v4 | 2025 | プロンプト集としての出発 |
+| v5 | 2025 後半 | xp-rules.md による自己進化導入 |
+| v6 | 2026-初 | Hook 導入、決定論的ルール強制 |
+| v7.0 〜 v7.2 | 2026-03 〜 04 | Subagent / Skill / MCP の体系化 |
+| v7.3 | 2026-04-22 | Permission 完全自動化（CLI flag + deny リスト二層） |
+| **v8.0** | **2026-04-25** | **External Memory Architecture / Karpathy 4 原則 / Phase 0.5 Pre-Design Verification Gate** |
 
 ---
 
@@ -365,39 +329,23 @@ Quality Gate（7ゲート）
 
 ---
 
-## 採用している標準・技術（実在確認済み）
+## 哲学
 
-| 技術 | 用途 | 根拠 |
-|---|---|---|
-| AGENTS.md | 一次指示書フォーマット | AAIF / Linux Foundation 標準（2025-12-09） |
-| MCP（Model Context Protocol） | ツール接続 | Anthropic → AAIF 寄贈。OpenAI / Codex も対応 |
-| `@playwright/mcp` | ブラウザ自動確認 | Microsoft 公式（`github.com/microsoft/playwright-mcp`） |
-| `@upstash/context7-mcp` | ライブラリドキュメント | npm 実在確認済み |
-| Karpathy 4原則 | コーディング指針 | `forrestchang/andrej-karpathy-skills`（65行/2.3KB） |
-| `dependency-cruiser` | 依存方向検証 | npm 実在確認済み |
-| `madge --circular` | 循環依存検出 | npm 実在確認済み |
+**「AI に長文を覚えさせる」設計ではなく、「正しい情報を引く・正しい責務に振る・正しい検証を自動化する」設計に切り替える。**
+
+LLM の能力は急速に向上しますが、**コンテキストウィンドウは増えてもコンテキスト管理の難しさは消えません**。MIT の Recursive Language Models (2026-01) や Anthropic の Managed Agents Memory (2026-04) が示唆するのは、**LLM 自身が記憶を持つのではなく、LLM の外側に永続記憶を置き、LLM はそれをプログラム的に操作する**という構造です。pm-zero-claude はこの構造を、Pro プランの制約下で再現可能に実装した一例です。
 
 ---
 
-## FAQ
+## 想定される評価ポイント（採用担当者向け）
 
-**Q: 非エンジニアでも使えますか？**  
-A: はい。これはPMフレームワークです。コードを書く必要はなく、アイデアを日本語で伝えるだけです。
+このプロジェクトを評価する際のポイントとして：
 
-**Q: Claude Pro だけでも使えますか？**  
-A: 使えます。Pattern B（Claude Pro単独）として設計済みです。Codex CLI は不使用になります。
-
-**Q: ChatGPT Plus だけでも使えますか？**  
-A: 使えます。Pattern C（ChatGPT Plus単独）として設計済みです。Claude Code は不使用になります。
-
-**Q: v8.0 のプロジェクトを移行できますか？**  
-A: できます。`MIGRATION.md` に非エンジニア向け移行手順を記載しています。既存の state.md / decisions.md などはそのまま引き継がれます。
-
-**Q: 「最初から全58ファイル」は多すぎませんか？**  
-A: Phase 2 で一括生成されるので、ユーザーが個別に作業する必要はありません。v8.0 で「後追加で混乱した」教訓から、最初に全部揃える設計にしました。
-
-**Q: Codex CLI の Windows 対応は安定していますか？**  
-A: 2026-05 時点で "experimental" 扱いです（OpenAI 公式）。本番環境では WSL2 を推奨します。
+1. **再現性**：他の人が同じ手順で同じ品質の成果物を得られる構造になっているか
+2. **第一原理思考**：なぜこの設計なのかが、AI モデルの確率的振る舞いの限界という第一原理から導出されているか
+3. **事実ベースの設計**：架空機能を含めず、公式ドキュメント・公開研究を出典として明示しているか
+4. **継続的改善**：xp-rules.md を通じた自己進化ループが、属人的でない仕組みとして組み込まれているか
+5. **制約下での最適化**：Pro プラン（$20/月）という具体的制約に対して、トークン経済を悪化させずに設計品質を最大化しているか
 
 ---
 
