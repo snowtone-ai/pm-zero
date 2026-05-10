@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "ms-vscode.powershell",
+    "yzhang.markdown-all-in-one",
+    "streetsidesoftware.code-spell-checker"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode-remote.remote-wsl"
+  ]
+}
