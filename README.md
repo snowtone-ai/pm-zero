@@ -55,7 +55,3 @@ The v9.3 design is finalized and internally audited for:
 - Codex config single source of truth
 - required task readiness fields
 - Markdown structural consistency
-
-## What is not included
-
-Personal profile details and private background information are intentionally excluded from this README.
