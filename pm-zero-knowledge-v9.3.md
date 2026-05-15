@@ -124,7 +124,7 @@ Project Knowledge (this file)
 
 User Repository
   +-- Core Layer          : directives, kernel, memory, handoff
-  +-- Execution Ledger    : vision / tasks / state / decisions / issues
+  +-- Execution Ledger Layer : vision / tasks / state / decisions / issues
   +-- Navigation Layer    : repo-map summary and details
   +-- Scripts Layer       : setup / verify / redaction helpers
   +-- Adapter Layer       : thin Claude Code / Codex CLI project adapters
@@ -146,7 +146,7 @@ User Repository
 
 6. `docs/vision.md` -- Product north star.
 7. `tasks.md` -- Implementation task ledger.
-8. `docs/state.md` -- Current execution pointer: branch, active task, executor, lock, latest verification pointer.
+8. `docs/state.md` -- Current execution pointer: branch, active task, executor, coordinator, lock, verification mode, latest verification pointer.
 9. `docs/decisions.md` -- Permanent decisions, reference URLs, review triggers.
 10. `docs/issues.md` -- Failure log, escalation, review timeout.
 
@@ -1029,7 +1029,7 @@ v9.3 preserves v9.2 gates and adds task/navigation gates.
 
 - `tasks.md` exists.
 - Active work maps to a task ID.
-- Ready tasks include owner, dependency, write scope, acceptance, verification, and evidence.
+- Ready tasks include owner, dependencies, write scope, acceptance, verification, and evidence.
 - Completed work updates task status and evidence.
 
 ### Q3. Repo Map Gate
@@ -1309,7 +1309,7 @@ Mitigation: both files replace repeated rediscovery and ad hoc planning files. `
 
 ### 20-2. Self-critique: `tasks.md` and `state.md` can overlap
 
-Mitigation: `tasks.md` owns all task rows, status history, and evidence. `state.md` owns only the current execution pointer: branch, active task, current executor, write lock, coordinator, and latest verification pointer.
+Mitigation: `tasks.md` owns all task rows, status history, and evidence. `state.md` owns only the current execution pointer: branch, active task, current executor, write lock, coordinator, verification mode, and latest verification pointer.
 
 ### 20-3. Self-critique: `vision.md` can drift into a task list
 
