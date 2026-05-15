@@ -1,57 +1,86 @@
 # pm-zero
 
-**Non-engineers can run AI coding work with less ambiguity, clearer handoffs, and stronger verification.**
+> **エンジニアでなくても、AIと一緒に本物の開発ができる。**
 
-pm-zero is an operating model for using Claude Code and Codex CLI together in VSCode on Windows PowerShell. It turns vague requests into a structured workflow: product intent, task ledger, current state, repository map, verification evidence, and Japanese handoff.
+pm-zero は、Claude Code と Codex CLI を使った AI 開発を、非エンジニアが指揮・品質管理・継続進化できるように設計された**オペレーティングモデル**です。
 
-## 10-second value
+---
 
-pm-zero makes AI coding work easier to manage for people who are not engineers:
+## なぜ pm-zero が必要か
 
-- It separates "what we want to build" from "what the agent must do next".
-- It gives AI agents a fixed task ledger instead of scattered temporary plans.
-- It records evidence, blockers, decisions, and handoff notes.
-- It reduces agent confusion by adding a compact repository map.
-- It defines when Claude Code should plan/review and when Codex CLI should implement/verify.
+AI コーディングツールは強力です。しかし多くの現場では——
 
-## What this demonstrates
+- 指示が曖昧なままエージェントが動き、品質がブレる
+- セッションをまたぐと文脈が失われ、作業が振り出しに戻る
+- 何ができたか・何が残っているかを誰も把握していない
 
-This repository shows practical AI-agent system design:
+pm-zero はこの構造的な問題を、**ドキュメント設計**で解決します。
 
-- **Product thinking:** `docs/vision.md` is treated as the north star, not a task dump.
-- **Execution control:** `tasks.md` is the single task ledger.
-- **Operational safety:** `docs/state.md` tracks the current executor, lock, coordinator, and verification mode.
-- **Agent navigation:** `docs/repo-map.md` helps agents find the right files without rereading the whole repository.
-- **Quality discipline:** every completion claim must map to task evidence and verification.
+---
 
-## Main document
+## pm-zero が変えること
 
-The current specification is:
+### 1. 技術知識ゼロでも、品質を安定させられる
+
+「何を作りたいか」と「次に何をすべきか」を分離した構造が、エージェントの行動を制御します。曖昧な指示が消え、レビューと検証が標準になります。
+
+### 2. ドキュメントが AI の記憶になる
+
+セッションが終わっても、状態・決定・ブロッカー・引き継ぎノートがすべてドキュメントに残ります。次のセッションで AI は迷わず再開できます。外部記憶が完璧に機能することで、長期プロジェクトの管理コストが激減します。
+
+### 3. XP システムで、プロジェクトを超えて自分が成長する
+
+タスクをこなすたびに XP が積み上がり、プロジェクトが終わっても蓄積されたスキルと知見が自分に残ります。AI に仕事を渡しながら、自分自身も進化し続ける仕組みが組み込まれています。
+
+---
+
+## 仕組み
+
+```
+Vision（何を作るか）
+  └─▶ Tasks（次に何をするか）
+        └─▶ Implementation（エージェントが実装）
+              └─▶ Verification（証拠で完了を確認）
+                    └─▶ Handoff（次セッションへ引き継ぎ）
+```
+
+各フェーズに対応するドキュメントが存在し、AI は常にそれを参照して動きます。
+
+| ドキュメント | 役割 |
+|---|---|
+| `docs/vision.md` | プロダクトの北極星（ゴールの定義） |
+| `tasks.md` | 単一タスク台帳（何をすべきか） |
+| `docs/state.md` | 現在の実行者・ロック・検証状態 |
+| `docs/repo-map.md` | エージェントが迷わないためのナビゲーション |
+
+---
+
+## 仕様書
+
+pm-zero の完全な設計仕様はここにあります：
 
 - [pm-zero-knowledge-v9.3.md](./pm-zero-knowledge-v9.3.md)
 
-v9.3 defines the **Dual-Agent Task Ledger OS**:
+v9.3 では **Dual-Agent Task Ledger OS** を定義しています。Claude Code（コーディネーター）と Codex CLI（ワーカー）が役割分担し、品質を維持します。
 
-```text
-Vision -> Tasks -> Implementation -> Verification -> Handoff
-```
+---
 
-## Who should care
+## 誰のためのプロジェクトか
 
-This project is relevant to:
+- AI 開発ワークフローを評価しているチーム
+- 非エンジニアとして開発を指揮したいマネージャー
+- AI に仕事を渡しながら自分も成長したい個人
+- Claude Code / Codex CLI の信頼性高いワークフローを設計したいエンジニア
 
-- Teams evaluating AI coding workflows.
-- Managers who need accountable AI-assisted delivery.
-- Non-engineers who want to direct implementation work without losing control.
-- Engineers designing reliable Claude Code / Codex CLI workflows.
+---
 
-## Current status
+## 現在のステータス
 
-The v9.3 design is finalized and internally audited for:
+v9.3 設計は完成・内部監査済みです。
 
-- layer consistency
-- task/state responsibility separation
-- coordinator/worker write ownership
-- Codex config single source of truth
-- required task readiness fields
-- Markdown structural consistency
+- [x] レイヤー整合性
+- [x] タスク・状態責任の分離
+- [x] コーディネーター/ワーカーの書き込み権限設計
+- [x] Codex 設定の単一ソース確保
+- [x] タスク準備完了フィールドの必須化
+- [x] Markdown 構造的一貫性
