@@ -59,9 +59,9 @@ Vision（何を作るか）
 
 pm-zero の完全な設計仕様はここにあります：
 
-- [pm-zero-knowledge-v9.4.md](./pm-zero-knowledge-v9.4.md)
+- [pm-zero-knowledge-v9.5.md](./pm-zero-knowledge-v9.5.md)
 
-v9.4 では **Lean Task Ledger OS** を定義しています。Claude Code（コーディネーター）と Codex CLI（ワーカー）が役割分担しつつ、生成される構成を最小化します。
+v9.5 では **Agent OS** を定義しています。CEO Agent がデフォルトのコーディネーターとして動的にワーカーエージェントを生成・オーケストレーションし、モデル対応の割り当てとトークン効率を最適化します。
 
 ---
 
@@ -76,13 +76,17 @@ v9.4 では **Lean Task Ledger OS** を定義しています。Claude Code（コ
 
 ## 現在のステータス
 
-v9.4 設計は完成・内部監査済みです。
+v9.5 設計は完成・内部監査済みです。
 
 - [x] レイヤー整合性
 - [x] タスク・状態責任の分離
-- [x] コーディネーター/ワーカーの書き込み権限設計
+- [x] CEO Agent / ワーカーの書き込み権限設計
 - [x] Codex 設定の単一ソース確保
 - [x] タスク準備完了フィールドの必須化
 - [x] Markdown 構造的一貫性
-- [x] 生成ファイル数の削減
+- [x] 生成ファイル数の維持（13ファイル）
 - [x] 最小品質ガードの維持
+- [x] CEO Agent デフォルトオーケストレーション
+- [x] モデル対応エージェント割り当て
+- [x] トークン消費最小化ポリシー
+- [x] Engineering Role / Thinking Protocol / Coding Priorities
