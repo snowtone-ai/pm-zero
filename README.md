@@ -1,5 +1,10 @@
 # pm-zero
 
+![Claude Code](https://img.shields.io/badge/Claude_Code-supported-black?logo=anthropic)
+![Codex CLI](https://img.shields.io/badge/Codex_CLI-supported-orange?logo=openai)
+![Markdown](https://img.shields.io/badge/docs-Markdown-lightgrey?logo=markdown)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
 > AIコーディングツールと一緒に本物のソフトウェア開発を管理するための、ドキュメントベースのオペレーティングモデル
 
 エンジニアでなくても、Claude CodeやCodex CLIなどのAIコーディングツールを使ったソフトウェア開発を指揮・品質管理できるよう設計した仕組みです。一連のドキュメント設計によって、AIへの指示の曖昧さをなくし、セッションをまたいでも文脈を失わず、品質を安定させます。v9.5ではCEO Agentがコーディネーターとしてワーカーエージェントを動的に指揮する「Agent OS」を定義しています。
@@ -18,9 +23,9 @@
 
 ## 技術スタック
 
-| カテゴリ | 技術・ツール |
+| カテゴリ | 技術 |
 |---|---|
-| AI・外部API | Claude Code、Codex CLI（AIコーディングエージェント） |
+| AI | Claude Code, Codex CLI |
 
 ---
 
