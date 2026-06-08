@@ -18,7 +18,9 @@
 
 ## 技術スタック
 
-AI・外部API：Claude Code、Codex CLI（AIコーディングエージェント）
+| カテゴリ | 技術・ツール |
+|---|---|
+| AI・外部API | Claude Code、Codex CLI（AIコーディングエージェント） |
 
 ---
 
