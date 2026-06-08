@@ -342,7 +342,6 @@ This follows the large-codebase pattern of lean root context plus layered local 
 # tasks.md -- pm-zero v9.5 Execution Ledger
 
 ## Goal Binding
-- Vision source: docs/vision.md
 - Active goal:
 - Planning owner: Claude Code / Codex CLI / Human
 - Implementation owner: Codex CLI / Claude Code / Human
@@ -356,16 +355,6 @@ This follows the large-codebase pattern of lean root context plus layered local 
 - review: implementation complete, review pending
 - done: accepted by reviewer
 - verified: evidence recorded
-
-## Parallelization Rules
-- CEO Agent owns tasks.md as the default coordinator.
-- CEO Agent decides whether to parallelize based on Write Scope separation.
-- Worker agents own only their assigned Write Scope.
-- Parallel implementation requires disjoint Write Scopes or isolated worktrees.
-- same file → serialize. separate scope → parallelize.
-- CEO Agent dynamically generates worktrees when parallel execution is beneficial.
-- Subagents return reports; CEO Agent updates tasks.md.
-- Maximum 3 concurrent agents including CEO.
 
 ## Tasks
 | ID | Status | Owner | Depends On | Write Scope | Acceptance | Verification | Evidence |
@@ -381,12 +370,14 @@ This follows the large-codebase pattern of lean root context plus layered local 
 |---|---|---|---|
 ```
 
-### 5-2. Scope Lock Rule
+### 5-2. Agent Coordination
 
-- CEO Agent owns `tasks.md` and `docs/state.md` as the default coordinator.
-- Workers edit only their assigned write scope.
-- Parallel work requires disjoint write scopes or isolated worktrees.
-- Tasks touching the same file are serialized.
+- CEO Agent owns `tasks.md` and `docs/state.md` as coordinator.
+- CEO Agent decides whether to parallelize based on Write Scope separation.
+- Worker agents may edit only their assigned Write Scope.
+- Parallel implementation requires disjoint Write Scopes or isolated worktrees.
+- Same file -> serialize. Separate scope -> parallelize.
+- Maximum 3 concurrent agents including CEO.
 
 ---
 
@@ -766,17 +757,16 @@ Promote only evidence-backed lessons:
 - Use rg before broad manual browsing.
 
 ## Task Ledger Rule
-- Planning output goes to tasks.md.
-- Implementation starts from tasks marked ready.
-- Each ready task includes owner, dependencies, write scope, acceptance, verification, and evidence.
-- CEO Agent updates tasks.md as the default coordinator.
-- Worker agents report results to the CEO Agent.
+- tasks.md is the only execution ledger.
+- Every ready task includes owner, dependencies, write scope, acceptance, verification, and evidence.
+- CEO Agent updates tasks.md and docs/state.md as coordinator.
 
-## Scope Lock Rule
-- CEO Agent owns tasks.md and docs/state.md as the default coordinator.
-- Workers edit only their assigned write scope.
-- Parallel work requires disjoint write scopes or isolated worktrees.
-- same file → serialize. separate scope → parallelize.
+## Agent Coordination
+- CEO Agent owns tasks.md and docs/state.md as coordinator.
+- CEO Agent decides whether to parallelize based on Write Scope separation.
+- Worker agents may edit only their assigned Write Scope.
+- Parallel implementation requires disjoint Write Scopes or isolated worktrees.
+- Same file -> serialize. Separate scope -> parallelize.
 - Maximum 3 concurrent agents including CEO.
 
 ## Quality Standards
@@ -827,6 +817,33 @@ Use only commands that exist in this repository.
 - Authentication, billing, production deploy final approval, and personal data handling are human tasks.
 - All other operations are AI-executed.
 
+## Git Workflow
+
+### Branches
+- Never commit directly to `main`. Always work on a dedicated branch.
+- Naming: `<type>/<short-description>` — e.g. `feat/add-auth`, `fix/null-check`, `docs/update-readme`, `security/harden-gitignore`.
+- Create the branch at the start of the task, not after implementation.
+
+### Commits
+- Commit after each logically complete unit of work. Do not accumulate changes and commit at session end.
+- Format: `<type>: <short description>` — types: `feat` / `fix` / `docs` / `refactor` / `security` / `chore` / `test`.
+- Stage only files within the task's Write Scope. Never stage `.env*`, secrets, or credential files.
+- Every committed function must work. No placeholder code.
+
+### Push
+- Push after every commit. Do not leave commits local-only.
+- First push: `git push -u origin <branch>`. Subsequent: `git push`.
+
+### Pull Requests
+- Open a PR to `main` when the branch is complete. Do not wait for the user to ask.
+- PR title: conventional commit format matching the branch type.
+- PR body: what changed and why.
+
+### Pre-push Security Check
+- Confirm `.gitignore` covers secret and credential patterns before the first push on any branch.
+- Run `gitleaks git --no-banner` if gitleaks is available.
+- If secrets are staged, untrack them and update `.gitignore` before pushing.
+
 ## Model Routing
 - Default planning: Claude Code.
 - Default implementation: Codex CLI.
@@ -853,10 +870,6 @@ Use only commands that exist in this repository.
 - Primary: PowerShell for all project operations.
 - Project paths use Windows paths with backslash in PowerShell.
 - Node.js scripts run with node scripts/name.mjs.
-
-## Version Policy
-- Keep the user's currently configured Claude Code version.
-- Verify local version during Phase 0 when relevant.
 ```
 
 ### 9-3. `docs/vision.md`
@@ -1104,6 +1117,28 @@ v9.5 applies these large-codebase practices from Anthropic's Claude Code guidanc
 - Ignore generated files, build artifacts, dependency folders, and third-party code.
 - Use repo maps when directory structure alone is not enough.
 - Review configuration every 3 to 6 months and after major model/tool releases.
+
+---
+
+## 15. Git and GitHub Workflow Rationale
+
+The Git Workflow rules in `AGENTS.md` encode practices that prevent two failure modes observed in real projects:
+
+**Failure 1 — Uncommitted drift**: Changes accumulate across a session without being committed. When context compresses or the session ends, the mapping between files changed and their purpose is lost. Fix: commit after each logical unit, not at session end.
+
+**Failure 2 — Silent local accumulation**: Changes are committed locally but never pushed. The remote is out of sync, and the user has no visibility. Fix: push immediately after every commit.
+
+### Branch naming rationale
+
+`<type>/<short-description>` makes the purpose of a branch legible in the GitHub PR list without opening it. This is the standard used by most open-source projects and engineering teams.
+
+### PR creation rationale
+
+AI agents should open PRs without being asked. The user cannot merge a branch that has no PR. PRs also serve as the permanent audit trail for what changed and why — more durable than commit messages alone.
+
+### Pre-push security check rationale
+
+A secret pushed to GitHub is effectively public within seconds due to automated scanners. Checking `.gitignore` coverage and running gitleaks before the first push catches the most common leak vector (accidentally staged credential files) before it becomes an incident.
 
 ---
 
