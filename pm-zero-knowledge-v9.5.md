@@ -937,6 +937,69 @@ Use only commands that exist in this repository.
 - Evidence location:
 ```
 
+### 9-6. `README.md`
+
+```markdown
+# <Project Name>
+
+![<Tech>](https://img.shields.io/badge/<Label>-<Message>-<Color>?logo=<slug>)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
+> <One-line description of what the project does and what problem it solves>
+
+<2–3 sentences of context. What it is, how it works at a high level, where it runs.>
+
+---
+
+## 主な機能
+
+- <Feature 1>
+- <Feature 2>
+- <Feature 3>
+
+---
+
+## 技術スタック
+
+| カテゴリ | 技術 |
+|---|---|
+| フロントエンド | <names only, comma-separated> |
+| バックエンド | <names only, comma-separated> |
+| インフラ | <names only, comma-separated> |
+
+---
+
+## 設計の工夫
+
+- <Non-obvious architectural decision and why it was made>
+- <Another decision>
+
+---
+
+## セットアップ
+
+<Prerequisites line>
+
+```bash
+<install and run commands>
+```
+
+---
+
+## ライセンス
+
+MIT
+```
+
+### README writing rules
+
+- **Badges**: place at top, one per major technology, use shields.io static badges.
+- **Tagline**: one line, starts with `>`. Describes what the product does and what problem it solves. No marketing language.
+- **Description**: 2–3 sentences max. Factual. No parenthetical tech explanations — e.g. write `FastAPI` not `FastAPI（Python製の高速APIフレームワーク）`. Readers are engineers; they know the tools.
+- **Tech stack table**: technology names only. No parenthetical descriptions. No column other than category and technology.
+- **設計の工夫**: non-obvious decisions only. Skip anything obvious from the tech stack.
+- **Language**: Japanese prose matches the project's primary language; code identifiers stay English.
+
 ---
 
 ## 10. Quality Gates
