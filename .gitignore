@@ -11,3 +11,14 @@ node_modules/
 # OS
 Thumbs.db
 Desktop.ini
+
+# GCP service account keys
+service-account*.json
+credentials.json
+.env.local
+.mcp.json
+.claude/settings.local.json
+.claude/worktrees/
+.claude/transcripts/
+.claude/cache/
+.codegraph/
