@@ -22,3 +22,6 @@ credentials.json
 .claude/transcripts/
 .claude/cache/
 .codegraph/
+
+# generated graph index
+docs/graph/
