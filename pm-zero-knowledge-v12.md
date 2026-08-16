@@ -4,7 +4,7 @@
     Date      2026-08-16
     Runtime   Claude Code 2.1.224 · Windows 11 · PowerShell · Claude Pro ($20/mo, no overage)
     Replaces  v11.1.1 (deleted in this release)
-    Size      481 lines, down from v11.1.1's 1429 (66% smaller)
+    Size      487 lines, down from v11.1.1's 1429 (66% smaller)
 
 ---
 
@@ -339,13 +339,19 @@ explicit that deny and ask rules "apply in every mode, including `bypassPermissi
   `more`, `less`, `sed`, `awk`, `Select-String`, and the copy/move forms that would materialise
   a `.env` from a template.
 - Commands that destroy **uncommitted** work were entirely unguarded: `git clean -f*`,
-  `git checkout|restore .`, `git branch -D`, `git stash clear|drop`. For a system whose
-  continuity model is "the files are the memory", these are the commands that delete the
-  memory. Scoped forms still pass — `git checkout -- src/foo.ts` is allowed.
-- The branch-delete rule is deliberately **case-sensitive**: `-D` force-deletes an unmerged
-  branch, `-d` refuses to. A case-insensitive rule blocked the safe form.
+  `git checkout|restore .`, `git stash clear|drop`. For a system whose continuity model is
+  "the files are the memory", these are the commands that delete the memory. Scoped forms
+  still pass — `git checkout -- src/foo.ts` is allowed.
 
-38 cases verified (12 allow, 26 block), including every case above.
+**One rule was added and removed the same day, by the loop in Section 9.** A `git branch -D`
+guard was written, caught blocking the safe lowercase `-d` by its own test suite, fixed to be
+case-sensitive, then deleted outright on its first real false positive: `-D` is the *only* way
+to clean up a squash-merged branch, which is the merge mode pm-zero itself mandates. The
+principled line it violated: `-D` destroys a **pointer** — the commits sit in the reflog for 90
+days — whereas the three rules above destroy content git has no other record of. Recoverability,
+not danger, is the criterion.
+
+38 cases verified (13 allow, 25 block), including every case above.
 
 **Fail-open is intentional and must be understood.** A hook that cannot start is non-blocking —
 the action proceeds. `guard.mjs` additionally exits 0 on unparseable input and on the Windows
