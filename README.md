@@ -17,7 +17,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20PowerShell-blue?style=flat-square&logo=powershell)](https://learn.microsoft.com/powershell)
 [![Version](https://img.shields.io/badge/version-v12-green?style=flat-square)]()
 [![Plan](https://img.shields.io/badge/budget-Claude%20Pro%20%2420%2Fmo%20only-purple?style=flat-square)]()
-[![Spec](https://img.shields.io/badge/spec-481%20lines%20(was%201429)-brightgreen?style=flat-square)]()
+[![Spec](https://img.shields.io/badge/spec-487%20lines%20(was%201429)-brightgreen?style=flat-square)]()
 
 </div>
 
@@ -57,7 +57,7 @@ v4.0 から v11.1 まで、ほぼすべてのバージョンが足し算でし�
 
 | | v11.1.1 | **v12** |
 |---|---|---|
-| 仕様書の分量 | 1429行 | **481行**（66%減） |
+| 仕様書の分量 | 1429行 | **487行**（66%減） |
 | 品質ゲート | 13個（うち7個は自己採点の作文） | **実行可能な4チェック + CI** |
 | マージ条件 | エージェントの自己判断 | **CIが緑（捏造できない）** |
 | セッション運用 | 10項目のプロトコル | **3行** |
@@ -67,7 +67,7 @@ v4.0 から v11.1 まで、ほぼすべてのバージョンが足し算でし�
 | 学習の発火条件 | 同じ失敗が3回 | **意外な失敗が1回** |
 | 学習の行き先 | 4箇所に振り分け | **1箇所**（可能なら `verify.mjs` に変換） |
 | 秘密ファイル防御 | hook が MultiEdit/NotebookEdit/Grep に**未到達** | **全ツールに到達**（38ケース検証） |
-| 未コミット作業の破壊 | 無防備 | `git clean -f` / `checkout .` / `branch -D` / `stash drop` を**遮断** |
+| 未コミット作業の破壊 | 無防備 | `git clean -f` / `checkout .` / `stash drop` を**遮断** |
 
 ---
 

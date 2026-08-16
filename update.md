@@ -541,7 +541,7 @@ of this entry — the platform facts inside it will be stale by the time it matt
 
 ## 9. v11.1.1 → v12 (2026-08-16)
 
-**pm-zero's first subtractive release.** The spec goes from 1429 lines to 481, not by
+**pm-zero's first subtractive release.** The spec goes from 1429 lines to 487, not by
 reorganising but by changing the criterion for what may enter it. Triggered by the operator's
 own report — *"v11.1.1 も複雑すぎるのでは？というか、私自身もどのような機能があるかを詳細に
 把握できていない"* — which is a system failure, not an operator failure, since pm-zero exists
@@ -575,14 +575,20 @@ retrieved 2026-08-16, and a walk of all 18 projects under `プロダクト/`.
 | F9 | `CLAUDE_CODE_USE_POWERSHELL_TOOL` is documented as the switch for *non-Windows*; redundant here | **retained deliberately** — removal untested, failure mode (no shell) worse than one redundant line |
 | F10 | Session start read `state.md`/`decisions.md`/`repo-map.md` and "nothing else by default" — `docs/issues.md` was never read back. The learning loop had a write path and no read path | `issues.md` added to session start |
 | F11 | Shell secret-read guard covered only `cat\|type\|get-content\|gc` | widened to `head`, `tail`, `more`, `less`, `sed`, `awk`, `Select-String`, and copy/move forms |
-| F12 | Commands that destroy **uncommitted** work were entirely unguarded — the `clean`/`checkout .`/`branch -D`/`stash drop` family. For a system whose continuity model is "the files are the memory", these delete the memory | blocked at both layers; scoped forms still pass |
+| F12 | Commands that destroy **uncommitted** work were entirely unguarded — the `clean`/`checkout .`/`stash drop` family. For a system whose continuity model is "the files are the memory", these delete the memory | blocked at both layers; scoped forms still pass |
 | F13 | The OS sandbox — the documented answer to "a script that opens files itself" — does not run on native Windows. The residual hole cannot be closed by configuration | recorded as an **accepted risk** (§9-5) |
 | F14 | P6 (cache TTL, "5 minutes or 1 hour — unverified") left open since v11.1.1 | **resolved: one hour on a Claude subscription**; subagents get five minutes |
 
-Found during v12's own implementation, by its test suite rather than by review: the new
-force-branch-delete rule was written case-insensitively, which also blocked the safe lowercase
-form. `-D` force-deletes an unmerged branch and `-d` refuses to; the rule is now case-sensitive
-on purpose. 38 cases pass (12 allow, 26 block).
+One F12 rule was added and deleted the same day, and the sequence is the whole learning loop in
+miniature. A `git branch -D` guard was written; the test suite caught it blocking the safe
+lowercase `-d` (a case-insensitive regex); it was fixed to be case-sensitive; then, on its first
+use in anger, it blocked pm-zero's own post-merge branch cleanup. That was not a bug in the
+regex — it was a bug in the rule. `-D` destroys a **pointer**: the commits stay in the reflog
+for 90 days. `clean -f`, `checkout .` and `stash drop` destroy content git has no other record
+of. Recoverability, not apparent danger, is the criterion. And because pm-zero mandates
+squash-merge, `-d` cannot delete a merged branch at all, so `-D` is the only cleanup path — the
+rule blocked the workflow that the same document prescribes. Deleted, with the reasoning left in
+the guard as a comment so it is not re-added. 38 cases pass (13 allow, 25 block).
 
 A known cost of F12: the guard now matches destructive command *shapes* anywhere in a shell
 string, so writing documentation that quotes those commands via a heredoc is blocked. This is
@@ -602,7 +608,7 @@ with the file tools, which is the correct path anyway.
 | D7 | Per-task effort escalation | Effort is part of the cache key; raising it mid-session re-reads the whole conversation. Replaced by the `ultrathink` keyword, which leaves the API effort level unchanged |
 | D8 | Plan → `/handoff` → execute session splitting | Directly contradicted by D1 |
 | D9 | `effortLevel` config key | Equals the platform default |
-| D10 | 948 lines of specification (1429 → 481) | Consequence of the above |
+| D10 | 942 lines of specification (1429 → 487) | Consequence of the above |
 
 ### 9-4. Additions (N1–N2)
 
