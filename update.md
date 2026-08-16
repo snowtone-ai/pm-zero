@@ -8,13 +8,27 @@ Version deltas, migration steps, and the reasons behind each change. The
 
 | File | Status |
 |---|---|
-| `pm-zero-knowledge-v11.2.md` | Current. Graph-Bound Autonomous Solo-Dev OS. Requires `scripts/graph.mjs` and `hooks/loop.mjs` |
-| `pm-zero-knowledge-v11.1.1.md` | Current, config-only alternative. Every correction and improvement that costs no new code |
+| `pm-zero-knowledge-v11.1.1.md` | Current. Sole active line. Every correction and improvement that costs no new code |
 | `pm-zero-knowledge-v10.md` | Historical reference. Some v11.x templates still cite its section numbers |
 
 `pm-zero-knowledge-v11.md` and `pm-zero-knowledge-v11.1.md` were removed on 2026-07-27: both are
-complete subsets of the two current files, and both carried claims the platform has since
-falsified (P1–P7 below).
+complete subsets of the two files that were current at that time, and both carried claims the
+platform has since falsified (P1–P7 below).
+
+`pm-zero-knowledge-v11.2.md` was removed on 2026-08-16, along with its dedicated implementation
+(`scripts/graph.mjs`, `hooks/loop.mjs`, generated `docs/graph/`). Not a platform-fact failure like
+the v11/v11.1 removal above — a fit decision, made against this operator's actual workload: small,
+personal products (e.g. `task-plant`, `grimoire`) built intermittently, on a non-engineer's own
+maintenance capacity. v11.2's two mechanisms both target problems that workload doesn't have —
+G_code's token savings matter at a repo size this operator's projects don't reach, and the closed
+coding loop's value is unattended multi-hour runs, not supervised bursts of hobby coding — while
+its cost (four hook scripts, a graph generator, a five-exit loop, ~18 tracked files, two bugs the
+design review itself only caught by running the code) lands hardest on exactly the operator who
+cannot debug a broken hook. v11.2's own §19-14.4 named this condition before it applied: *"If the
+operator will not maintain this, v11.1 plus the corrections is a better system for them than
+v11.2."* See §8 for the full record. `pm-zero-knowledge-v11.1.1.md` is retained unmodified by this
+decision — it already carried the full safety and budget core (guard hook, bypassPermissions,
+ledger-file memory, tiered review, Self-Evolution) that both siblings shared.
 
 **Label index** — these identifiers are referenced from inside the design specs:
 
@@ -24,6 +38,7 @@ falsified (P1–P7 below).
 | `A1`–`A6` | v11.1.1 additions that cost no new code | §2 |
 | `S1`–`S2` | v11.2 structural changes | §3 |
 | `C1`–`C7` | v11.1 claims corrected in v11.2 | §3 |
+| `R1`–`R2` | Corrections found after both v11.1.1 and v11.2 shipped | §7 |
 
 ---
 
@@ -34,13 +49,18 @@ v10   2026-06-08  Autonomous Solo-Dev OS
 v11   2026-07-05  + budget wall, zero prompts, guard hook          [removed 2026-07-27]
 v11.1 2026-07-23  + platform facts refreshed, prose -> harness      [removed 2026-07-27]
   |
-  +-- v11.1.1  2026-07-27  truth patch, config only        -> pm-zero-knowledge-v11.1.1.md
-  +-- v11.2    2026-07-27  graph re-architecture           -> pm-zero-knowledge-v11.2.md
+  +-- v11.1.1  2026-07-27  truth patch, config only              [removed 2026-08-16]
+  +-- v11.2    2026-07-27  graph re-architecture                 [removed 2026-08-16]
+        |
+        v
+v12   2026-08-16  executable-only; first subtractive release
+                                                   -> pm-zero-knowledge-v12.md
 ```
 
-v11.1.1 and v11.2 are siblings, not a sequence. Both correct the same set of v11.1 errors. They
-differ in where they stop: v11.1.1 stops exactly where new programs would begin; v11.2 crosses
-that line deliberately and ships the programs.
+v11.1.1 and v11.2 were siblings, not a sequence. Both corrected the same set of v11.1 errors.
+They differed in where they stopped: v11.1.1 stopped exactly where new programs would begin;
+v11.2 crossed that line deliberately and shipped the programs. v11.2 was discontinued on
+2026-08-16 (Section 8); v11.1.1 was superseded by v12 the same day (Section 9).
 
 ---
 
@@ -443,3 +463,191 @@ check permanently. Neither was visible in review. Both were caught in the first 
   moved underneath them. That distinction is preserved deliberately: it is the difference between
   a reasoning failure and a missing re-verification cadence, and only the second one is fixable
   by a rule.
+
+---
+
+## 7. Post-release corrections (found after both v11.1.1 and v11.2 shipped)
+
+Applies to both siblings, since both made the same call on the item below. Unlike §2/§3, these
+were not found by re-reading vendor documentation on a release day — they were found by an
+operator's project drifting from the spec and by the spec itself being checked against current
+docs while fixing that drift.
+
+| # | What v11.1.1/v11.2 shipped | Truth on 2026-08-16 | Fix |
+|---|---|---|---|
+| **R1** | `CLAUDE_CODE_AUTO_COMPACT_WINDOW=188000`, **no percentage** — P3/C5's "wrong knob" diagnosis: the percentage was read as a mechanism defect and deleted. | The mechanism was never the defect; the *value* (`15`) was. Current official Claude Code docs state, without qualification, that `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` "applies to both main conversations and subagents" — the scoped-thrash risk P3/C5 warned about is real at `15`, not inherent to using a percentage. The two keys also **compose** rather than exclude each other (window sets the denominator, percentage sets the trigger fraction) — confirmed in current docs; P3/C5 believed them mutually exclusive. The GitHub issue underpinning half the "fragility" argument (#36381, percentage not applying to subagents) is now closed. | `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=70`, `CLAUDE_CODE_AUTO_COMPACT_WINDOW` left unset. Both knowledge files' §8-5/§9-3 revised in place rather than superseded, since the invariant (hold the trigger in a safe band on every model) is unchanged — only the mechanism-is-broken claim was wrong. |
+| **R2** | Project-level `.claude/settings.json` template: `"Bash(rm -rf *)"`, introduced to fix v11.1's malformed `"Bash(rm -rf:*)"`. §7-3/§8-5 promises scoped deletes (`rm -rf node_modules`) "pass — the guard blocks the catastrophic set, not everyday cleanup." | That promise is true of `guard.mjs`, which correctly scopes to root/home. It is **not** true of this project-level deny rule: the syntax fix made it match every `rm -rf` invocation, with no scoping at all. Blocked a benign `rm -rf .next` cache clear in a real session. | **Not fixed.** Flagged inline in both knowledge files (§7-5/§8-7) as an open item — the correct glob to scope the rule to root/home paths has not been verified against Claude Code's actual permission-rule syntax, and shipping an unverified pattern would be worse than leaving the gap documented. |
+
+Also discovered, not a knowledge-base defect but worth recording as a process lesson: a project's
+`CLAUDE.md` documented `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=50` for an unknown period after its
+`settings.json` had already been changed to `70` — a governance migration had updated one file
+and not the other. Both knowledge files' "verify the firing point" rule (§8-5/§9-3) now says to
+check `CLAUDE.md` prose against the actual `settings.json` value, not just the transcript.
+
+---
+
+## 8. v11.2 discontinued (2026-08-16)
+
+**This is not a §7-style correction.** Nothing in v11.2 was found false. It was found *not worth
+its own cost*, for one specific operator's actual workload — and the design spec had already
+named the exact condition under which that verdict would apply (§19-14.4, quoted below). This
+entry exists so a future session — or a future project where the calculus differs — has the
+reasoning, not just the fact of removal.
+
+**The workload it was checked against.** One non-engineer, running Claude Code to build small
+personal products under a `プロダクト/` directory (`task-plant`, `grimoire` are the two named as
+examples) — conceived and worked on intermittently, "when the idea strikes," not on a schedule,
+and not maintained by anyone who can read or debug the hook scripts pm-zero ships.
+
+**Why both of v11.2's headline mechanisms miss that workload:**
+
+| Mechanism | What it buys | Why it doesn't pay off here |
+|---|---|---|
+| **G_code** (`scripts/graph.mjs`, generated `docs/graph/`) | Cuts *acquisition* cost — tokens spent re-deriving repo structure by reading — on a codebase large enough that this re-derivation is a real line item. | The design spec's own §19-14.2 admits the effect is unmeasured for "a TypeScript project driven by Sonnet 5" specifically — the workload here. A solo hobby app small enough to be built between other things is small enough for a Haiku Explore subagent to just read it. |
+| **The closed coding loop** (`hooks/loop.mjs`, the `Stop`/`TaskCompleted` hook chain) | Lets the agent keep working across a task queue without a human present to confirm each step actually finished. | This operator's sessions are supervised, bursty hobby sessions, not unattended multi-hour runs — the scenario the loop exists to survive. Native `/goal` already covers "don't stop mid-task" for a session someone is watching. |
+
+**Why the cost lands harder here than on the workload v11.2 was designed for.** v11.2 adds four
+global hook scripts, a graph generator, a rules directory, a state file, and a five-exit loop —
+and two of the bugs that shipped past its own design review (a lock released in the wrong order,
+raising `EPERM` on Windows; a `.trim()` that shifted every path in `git status --porcelain` by one
+character) were caught only by *running* the code, not by reading it, on the same
+Windows-PowerShell setup this operator runs. An operator who cannot design a harness themselves
+(the stated reason pm-zero exists for them at all) also cannot triage a hook that fails silently
+in a way neither of those two bugs would have surfaced without someone watching for it.
+
+**The spec had already priced this in.** From v11.2 §19-14.4, unedited:
+
+> "Complexity has roughly doubled for a non-engineer operator. [...] If the operator will not
+> maintain this, v11.1 plus the corrections is a better system for them than v11.2. That is a real
+> recommendation, not a rhetorical hedge: the corrections are worth deploying on their own, today,
+> in about ten minutes, and they carry most of the safety value of this entire document."
+
+**What is lost, and what is not.** Lost: G_code, the closed coding loop, typed work-graph edges,
+evidence-gated task closure — all real mechanisms, correctly built, just aimed at a repo size and
+an unattended-runtime pattern this operator's projects don't have yet. Not lost: everything that
+made v11.1.1 itself a "truth patch" rather than a downgrade — the `.env` write-path guard fix, the
+subagent nesting-depth pin, the corrected autocompact threshold, the RTK removal, and the full
+budget/safety/self-evolution core both siblings shared from v11.1. `pm-zero-knowledge-v11.1.1.md`
+needed no edit to absorb this decision; it was never coupled to v11.2 in the first place.
+
+**If this changes.** If a project under `プロダクト/` grows past what one person reading the diff
+can track — many files, real dependency chains, regressions from unrelated changes — that is the
+concrete trigger to reconsider G_code specifically (not the whole of v11.2, and not the coding
+loop, which stays tied to an unattended-operation need that has to arise on its own). Re-derive
+from `pm-zero-knowledge-v11.2.md` at the git commit this removal lands in, rather than from memory
+of this entry — the platform facts inside it will be stale by the time it matters again.
+
+---
+
+## 9. v11.1.1 → v12 (2026-08-16)
+
+**pm-zero's first subtractive release.** The spec goes from 1429 lines to 481, not by
+reorganising but by changing the criterion for what may enter it. Triggered by the operator's
+own report — *"v11.1.1 も複雑すぎるのでは？というか、私自身もどのような機能があるかを詳細に
+把握できていない"* — which is a system failure, not an operator failure, since pm-zero exists
+so that a non-engineer need not design a harness.
+
+### 9-1. The constitution
+
+> A rule enters pm-zero only if it is **a config value, a script exit code, or a hook**.
+
+Root cause of v4→v11's monotonic growth: adding a prose rule cost nothing to write and nothing
+to enforce, so nothing pushed back. The constitution restores the pressure — every future
+addition must be built, not merely written. One named exception is carried: the judgment-level
+lines in `~/.claude/CLAUDE.md` ("prefer minimal safe edits", "think before editing"), capped at
+that file's length.
+
+### 9-2. Defects found by audit (F1–F14)
+
+All verified against Claude Code 2.1.224, the deployed config files, official documentation
+retrieved 2026-08-16, and a walk of all 18 projects under `プロダクト/`.
+
+| # | Defect | Status |
+|---|---|---|
+| F1 | `Write(**/.env)` ×2 deny rules: Claude Code accepts path rules on `Write` but never consults them, and warns at startup | removed |
+| F2 | Global `CLAUDE.md` claimed `permissions.allow` was `["*"]`; it was a 21-entry list. A `"*"` allow rule is in fact skipped with a warning and auto-approves nothing | text corrected to reality |
+| F3 | Hook matcher `"Bash\|PowerShell\|Read\|Edit\|Write"` is an **exact-match list**, not a regex — `MultiEdit`, `NotebookEdit`, `Grep` never reached the hook. v11.1.1's headline write-path fix (P7) was dead code for two of the four tools it named | matcher anchored-regex |
+| F4 | `guard.mjs` asserted hooks are "the only enforcement layer guaranteed to fire" under bypassPermissions. Deny rules apply in **every** mode and are evaluated **before** hooks | layer order corrected |
+| F5 | `CLAUDE.md` forbade `CLAUDE_CODE_AUTO_COMPACT_WINDOW` as "silently disabling" the percentage. The two compose; v11.1.1 §8-5 already said so. Only `CLAUDE.md` was wrong | prohibition withdrawn |
+| F6 | `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=70` cannot raise a threshold and applies only to sessions compacting *before* the model limit — plausibly inert on Opus 5 at 200K on Pro | replaced by absolute window |
+| F7 | `CLAUDE.md` said "keep effort at medium"; deployed config said `high`; `high` is the platform default on every model | rule and key both removed |
+| F8 | `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` / `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` absent from the official env-var reference | removed |
+| F9 | `CLAUDE_CODE_USE_POWERSHELL_TOOL` is documented as the switch for *non-Windows*; redundant here | **retained deliberately** — removal untested, failure mode (no shell) worse than one redundant line |
+| F10 | Session start read `state.md`/`decisions.md`/`repo-map.md` and "nothing else by default" — `docs/issues.md` was never read back. The learning loop had a write path and no read path | `issues.md` added to session start |
+| F11 | Shell secret-read guard covered only `cat\|type\|get-content\|gc` | widened to `head`, `tail`, `more`, `less`, `sed`, `awk`, `Select-String`, and copy/move forms |
+| F12 | Commands that destroy **uncommitted** work were entirely unguarded — the `clean`/`checkout .`/`branch -D`/`stash drop` family. For a system whose continuity model is "the files are the memory", these delete the memory | blocked at both layers; scoped forms still pass |
+| F13 | The OS sandbox — the documented answer to "a script that opens files itself" — does not run on native Windows. The residual hole cannot be closed by configuration | recorded as an **accepted risk** (§9-5) |
+| F14 | P6 (cache TTL, "5 minutes or 1 hour — unverified") left open since v11.1.1 | **resolved: one hour on a Claude subscription**; subagents get five minutes |
+
+Found during v12's own implementation, by its test suite rather than by review: the new
+force-branch-delete rule was written case-insensitively, which also blocked the safe lowercase
+form. `-D` force-deletes an unmerged branch and `-d` refuses to; the rule is now case-sensitive
+on purpose. 38 cases pass (12 allow, 26 block).
+
+A known cost of F12: the guard now matches destructive command *shapes* anywhere in a shell
+string, so writing documentation that quotes those commands via a heredoc is blocked. This is
+inherent to regex-on-command-string guarding and is not worked around — file content is written
+with the file tools, which is the correct path anyway.
+
+### 9-3. Deletions (D1–D10)
+
+| # | Deleted | Cause |
+|---|---|---|
+| D1 | Session Budget Protocol, 10 rules → 3 | Cached input bills at ~10% and a subscription holds the cache one hour, so "one task per session" paid a cold-cache tax on every handoff. It was not merely unnecessary — it was more expensive |
+| D2 | 7 of 13 quality gates (Q1, Q2, Q5, Q6, Q8, Q10, Q11) | Satisfiable only by prose, written by the author in the author's context. For hobby projects Q6/Q10/Q11 usually do not apply, and the checklist had no "N/A", so a plausible ✓ was generated regardless |
+| D3 | Review Tier 2 (Opus for auth/billing/DB/PII) | Trigger classes essentially absent from this operator's projects; plausibly never fired in four months |
+| D4 | Three of four learning destinations; `docs/lessons.md` | Nothing read them |
+| D5 | The "3 identical failures" trigger → **1 surprising failure** | Most lessons come from one surprise; three identical failures are rare. Measured: `.claude/rules/` exists in **1 of 18** projects |
+| D6 | `AGENTS.md` from the default template | Artifact of the abandoned multi-vendor era (v9.x); Claude-Code-only since v10 |
+| D7 | Per-task effort escalation | Effort is part of the cache key; raising it mid-session re-reads the whole conversation. Replaced by the `ultrathink` keyword, which leaves the API effort level unchanged |
+| D8 | Plan → `/handoff` → execute session splitting | Directly contradicted by D1 |
+| D9 | `effortLevel` config key | Equals the platform default |
+| D10 | 948 lines of specification (1429 → 481) | Consequence of the above |
+
+### 9-4. Additions (N1–N2)
+
+**N1 — `.github/workflows/ci.yml` becomes a default project file.** The only mechanism added in
+v12, and the one change that had to earn its place against the constitution. It runs the same
+four checks as `scripts/verify.mjs`; the difference is *where*. Under v11 the agent that wanted
+to merge ran the verification on its own machine and reported the result. An agent can report a
+passing local run; it cannot fabricate a GitHub check. With branch protection, the merge gate
+stops being a paragraph the agent grades itself against.
+
+Measured baseline: **2 of 18** projects have a CI workflow today.
+
+**N2 — `~/.claude/agents/{planner,reviewer}.md`.** Model routing moves from a prose table into
+subagent frontmatter (`model: opus`, `effort: high`, read-only toolsets). This is the only
+sanctioned way to use a second model in v12: switching `/model` mid-session re-reads the whole
+conversation, whereas a subagent never shares the parent's cache, so its model choice imposes no
+switching cost on the parent.
+
+### 9-5. Accepted risk, recorded rather than closed
+
+Deny rules and hooks do not reach a process that opens a file itself (`node -e`, `python -c`).
+The documented remedy is the OS sandbox, which does not support native Windows. **The risk is
+accepted and will not be mitigated**: personal hobby projects, no production system, no real
+money, no third-party data, no secrets in the working tree. `bypassPermissions` likewise offers
+no protection against prompt injection, and `curl`/`wget` are unrestricted.
+
+The point of the entry is that it is written down. v11 could tell itself the hole was closed.
+
+### 9-6. What v12 costs
+
+Stated because every prior release stated only what it gained. Seven quality gates are gone; if
+one was catching something, that catch is gone with it — the evidence says they were not, since
+no artifact from any of them survives in 18 projects, but absence of evidence is what it is.
+Tier 2 review is gone and would have to be re-derived rather than re-enabled. CI is real
+recurring work. And the accepted risk is now permanent rather than pending.
+
+### 9-7. Files
+
+Deployed: `~/.claude/settings.json`, `~/.claude/hooks/guard.mjs`, `~/.claude/CLAUDE.md`,
+`~/.claude/agents/planner.md`, `~/.claude/agents/reviewer.md`.
+Repository: `pm-zero-knowledge-v12.md` added; `pm-zero-knowledge-v11.1.1.md` deleted;
+`README.md` rewritten (it had been stale since v11 — Sonnet 4.6, RTK, 50% autocompact, and a
+pointer to the no-longer-existing `pm-zero-knowledge-v11.md`).
+
+Per-project migration, applied as each project is next touched: add `ci.yml` and branch
+protection (start with `task-plant` — it already has both `verify.mjs` and the only
+`.claude/rules/` file in existence); add `docs/issues.md` to the session-start read set and
+strip it to current blockers; delete `docs/lessons.md` and `AGENTS.md` where unused.
