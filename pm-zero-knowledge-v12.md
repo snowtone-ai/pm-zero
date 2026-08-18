@@ -388,6 +388,9 @@ failure mode; knowing it is open is not.
 - **Merge gate: CI green.** Low/medium risk → squash-merge and delete the branch. High-risk
   classes → implement and review fully, then stop before any irreversible real-world side
   effect and surface a Japanese summary.
+- **Docs-only exception:** a change touching only Markdown/doc files (no source, config, or
+  CI files) may commit straight to `main`, skipping branch/PR/CI. `git diff --check` still
+  required.
 - Force-push, history rewrite, and the uncommitted-work destroyers are blocked at layers 1–2.
 
 ---
