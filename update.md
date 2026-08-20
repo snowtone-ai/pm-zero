@@ -8,8 +8,12 @@ Version deltas, migration steps, and the reasons behind each change. The
 
 | File | Status |
 |---|---|
-| `pm-zero-knowledge-v11.1.1.md` | Current. Sole active line. Every correction and improvement that costs no new code |
+| `pm-zero-knowledge-v12.1.md` | Current. Sole active line |
 | `pm-zero-knowledge-v10.md` | Historical reference. Some v11.x templates still cite its section numbers |
+
+`pm-zero-knowledge-v11.1.1.md` was removed on 2026-08-16 when superseded by
+`pm-zero-knowledge-v12.md` (Section 9); `pm-zero-knowledge-v12.md` was itself removed on
+2026-08-21 when superseded by `pm-zero-knowledge-v12.1.md` (Section 10).
 
 `pm-zero-knowledge-v11.md` and `pm-zero-knowledge-v11.1.md` were removed on 2026-07-27: both are
 complete subsets of the two files that were current at that time, and both carried claims the
@@ -53,14 +57,20 @@ v11.1 2026-07-23  + platform facts refreshed, prose -> harness      [removed 202
   +-- v11.2    2026-07-27  graph re-architecture                 [removed 2026-08-16]
         |
         v
-v12   2026-08-16  executable-only; first subtractive release
-                                                   -> pm-zero-knowledge-v12.md
+v12   2026-08-16  executable-only; first subtractive release       [removed 2026-08-21]
+  |
+  v
+v12.1 2026-08-21  + frontend/UI operating layer, cut to the same constitution
+                                                   -> pm-zero-knowledge-v12.1.md
 ```
 
 v11.1.1 and v11.2 were siblings, not a sequence. Both corrected the same set of v11.1 errors.
 They differed in where they stopped: v11.1.1 stopped exactly where new programs would begin;
 v11.2 crossed that line deliberately and shipped the programs. v11.2 was discontinued on
-2026-08-16 (Section 8); v11.1.1 was superseded by v12 the same day (Section 9).
+2026-08-16 (Section 8); v11.1.1 was superseded by v12 the same day (Section 9). v12.1 is the
+first release since the constitution shipped to *add* rather than subtract — a single frontend/UI
+layer, admitted only where it reduced to a check, a triggered tool call, or a config value
+(Section 10).
 
 ---
 
@@ -657,3 +667,76 @@ Per-project migration, applied as each project is next touched: add `ci.yml` and
 protection (start with `task-plant` — it already has both `verify.mjs` and the only
 `.claude/rules/` file in existence); add `docs/issues.md` to the session-start read set and
 strip it to current blockers; delete `docs/lessons.md` and `AGENTS.md` where unused.
+
+---
+
+## 10. v12 → v12.1 (2026-08-21)
+
+**pm-zero's first additive release since the constitution shipped.** Triggered by a separately
+drafted document, `AI_Agent_Design_Operating_System.md` (938 lines), proposing a frontend/UI
+design-operations workflow for this operator's projects. Rather than adopt it as written, it was
+run through the same admission test Section 9 applied to the backend: a rule enters only if it
+is a config value, a script exit code, or a hook. Most of the source document failed that test
+outright — an 8-phase implementation loop, five "Agent Operating Rules", a 14-point self-critique
+checklist, and a four-file ledger (`PRODUCT.md`, `DESIGN.md`, `UX_RULES.md`,
+`ASSET_REGISTRY.md`) — the same shape of self-graded prose judgment that D2 (§9-3) already
+removed from the backend for being unenforceable. It was not carried over just because the domain
+changed from backend to frontend.
+
+### 10-1. What passed the constitution (K1–K4)
+
+| # | Source rule | pm-zero mechanism |
+|---|---|---|
+| K1 | §6 "Raw values" — no unregistered hex/px/radius/shadow | `verify.mjs` **lint check**, active only once a project adopts `DESIGN.md` |
+| K2 | §7 Rule 4 "No Blind Completion" — a screen isn't done until seen running | Existing **Playwright MCP + `run` skill**, named as the specific tool for an already-existing global instruction |
+| K3 | §9 "User Prompt Contract" — a non-engineer can't review a diff but can react to a rendered design | **`/design-sync` + claude.ai/design**, generating against the project's real components instead of placeholders (Claude Code 2.1.198+, Anthropic API only) |
+| K4 | §7 Rule 5 / Phase 5 "Visual QA" — fresh-eyes audit of a finished screen | Existing **Tier 1 reviewer** trigger list, extended to cover UI/design-token changes |
+
+K3 was added mid-task at the operator's explicit direction, after the initial three-row pass —
+the operator specifically wanted the Claude Code `/design-sync` mechanism (not a literal
+`/design` command, which does not exist; confirmed against the official commands reference)
+included as the way to put a rendered design in front of a non-engineer before or during
+implementation, rather than relying only on the agent's own Playwright verification.
+
+### 10-2. What did not pass, and why that is not a loss
+
+The rejected material was not deleted from a working system; it was never granted entry. Its
+tool stack (Impeccable, shadcn/ui, better-design, Awesome Claude Design, Lucide, Rive, Lottie,
+Magic UI, Aceternity UI, Context7, Chrome DevTools MCP) is not deployed — only Playwright MCP and
+`/design-sync` are, and both were already available before this release. `PRODUCT.md` and
+`UX_RULES.md` are not added as ledger files: `docs/vision.md` already carries product purpose and
+priorities, and per-feature UX principles are judgment calls of the kind Section 1's global-file
+exception already covers.
+
+**Conflicting existing tooling: none found.** The instruction to prefer the new document over
+any existing competing frontend tooling was checked against `pm-zero-knowledge-v12.md`,
+`README.md`, and `update.md` (`grep -i` for shadcn/figma/storybook/design/frontend/playwright/
+lucide/tailwind/mcp). Nothing in pm-zero named a frontend design tool before this release, so
+nothing was removed under that instruction.
+
+### 10-3. Optional files (Section 3 extension)
+
+`DESIGN.md`, `ASSET_REGISTRY.md` join the existing optional-on-need list (`.claude/rules/*.md`,
+`.claude/agents/*.md`, etc.) — added only by a project with a UI surface, only when the UI work
+starts, following the same rule as every other optional file in the template.
+
+### 10-4. What v12.1 costs
+
+The first size increase since the constitution shipped: `pm-zero-knowledge-v12.md`'s 557 lines
+(post the in-progress Codex CLI additions) become 657. No global config, hook, or settings
+change — the cost is entirely in the spec file and in one more thing (Section 16) an operator
+must know exists, the opposite direction from v12's whole premise. It is accepted because the
+alternative — a second, separately maintained UI-operations document outside pm-zero's own
+constitution — is exactly the kind of ungoverned growth v12 existed to stop.
+
+### 10-5. Files
+
+Repository: `pm-zero-knowledge-v12.1.md` added (renamed from `pm-zero-knowledge-v12.md` with
+Section 16 and cross-references added); `pm-zero-knowledge-v12.md` deleted;
+`AI_Agent_Design_Operating_System.md` deleted, absorbed into Section 16; `README.md` updated
+(version, spec line count, a new "v12 → v12.1" section, one FAQ entry); `update.md` — this
+section.
+
+No per-project migration is required until a project next does UI work; at that point, Section
+16.8 applies (`DESIGN.md` when there is a token system to register; `/design-login` once per
+machine and `/design-sync` once per project before relying on K3).

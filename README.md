@@ -7,7 +7,7 @@
 ██╔═══╝ ██║╚██╔╝██║       ███╔╝  ██╔══╝  ██╔══██╗██║   ██║
 ██║     ██║ ╚═╝ ██║      ███████╗███████╗██║  ██║╚██████╔╝
 ╚═╝     ╚═╝     ╚═╝      ╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝
-                                                       v12
+                                                     v12.1
 ```
 
 **Executable-Only Solo-Dev OS — Claude Code × Windows PowerShell × Claude Pro**
@@ -15,16 +15,17 @@
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/runtime-Claude%20Code%202.1.224-orange?style=flat-square&logo=anthropic)](https://code.claude.com)
 [![Platform](https://img.shields.io/badge/platform-Windows%20PowerShell-blue?style=flat-square&logo=powershell)](https://learn.microsoft.com/powershell)
-[![Version](https://img.shields.io/badge/version-v12-green?style=flat-square)]()
+[![Version](https://img.shields.io/badge/version-v12.1-green?style=flat-square)]()
 [![Plan](https://img.shields.io/badge/budget-Claude%20Pro%20%2420%2Fmo%20only-purple?style=flat-square)]()
-[![Spec](https://img.shields.io/badge/spec-487%20lines%20(was%201429)-brightgreen?style=flat-square)]()
+[![Spec](https://img.shields.io/badge/spec-657%20lines-brightgreen?style=flat-square)]()
 
 </div>
 
 ---
 
 > **月20ドルの固定予算で、エンジニアでなくてもソフトウェアを出荷できる。**
-> ただし v12 の主眼は機能追加ではなく、**削除**にある。
+> v12 の主眼は機能追加ではなく**削除**にあり、v12.1 はその上に憲法を通過した
+> **フロントエンド/UI運用層**だけを足す。
 
 Status: 継続開発中
 
@@ -32,7 +33,7 @@ Status: 継続開発中
 
 ## これは何か
 
-**pm-zero v12** は、Claude Code を使ったソロ開発を自律化するための **OSレベルのルールセット**です。
+**pm-zero v12.1** は、Claude Code を使ったソロ開発を自律化するための **OSレベルのルールセット**です。
 
 v12 は pm-zero の歴史で**初めて、引き算を主目的とした**リリースです。
 v4.0 から v11.1 まで、ほぼすべてのバージョンが足し算でした。理由は単純で、**散文のルールを1行足すコストがゼロ**だったからです。書くのも維持するのも無料なので、増加に抵抗する力がどこにもありませんでした。結果、1429行——その運用者自身が把握できない仕様書ができあがりました。
@@ -100,6 +101,26 @@ scripts/verify.mjs   →  lint / typecheck / test / build
 違いは中身ではなく、**実行される場所**です。v11 では、マージしたいエージェントが、自分のマシンで、自分のセッションから検証を走らせ、結果を自分で報告していました。**エージェントはローカルの検証結果については「通りました」と報告できますが、GitHub のチェックは捏造できません。**
 
 ブランチ保護でこのチェックを必須にすれば、マージ条件は「エージェントの自己採点」から「物理的な条件」になります。
+
+---
+
+## v12 → v12.1：フロントエンド/UI運用層の追加
+
+外部で書かれたUI/UXデザイン運用ドキュメント（8フェーズのワークフロー、14項目の自己採点チェックリストなど）を
+統合する話が持ち上がりましたが、その中身のほとんどは**バックエンド向けに削った7つの品質ゲートと同じ形**——
+自己採点の作文——でした。憲法は例外を作りません。同じ基準で切り、通ったものだけを4つ採用しました。
+
+| 元ドキュメントのルール | pm-zeroでの実装 |
+|---|---|
+| 未登録の色・余白・角丸を使わない | `verify.mjs` の**lintチェック**（`DESIGN.md` 採用時のみ） |
+| 実ブラウザで見るまで完了にしない | 既存の **Playwright MCP + `run` スキル** |
+| 非エンジニアはdiffを読めないが、デザインを見れば反応できる | **`/design-sync` + claude.ai/design** でデザインを提示 |
+| 完成画面の第三者視点QA | **Tier 1 レビュアーの発火条件**に「UI/デザイントークンの変更」を追加 |
+
+`DESIGN.md`・`ASSET_REGISTRY.md` は UI を持つプロジェクトだけが、必要になった時点で追加する任意ファイルです
+（既存の `.claude/rules/*.md` などと同じ扱い）。Impeccable・shadcn/ui・better-design など元ドキュメントが
+挙げていたツール群は導入しません——「目的なくSkill/MCPを増やさない」という元ドキュメント自身のルールに従い、
+具体的な必要が出た時にプロジェクト単位で入れます。詳細は `pm-zero-knowledge-v12.1.md` §16。
 
 ---
 
@@ -186,7 +207,7 @@ v11.1.1 の13ファイルから：`ci.yml` を**追加**、`docs/lessons.md`（�
 
 **Step 1 — グローバル設定（初回のみ）**
 `~/.claude/settings.json`、`~/.claude/hooks/guard.mjs`、`~/.claude/CLAUDE.md`、
-`~/.claude/agents/{planner,reviewer}.md` を配置。詳細は `pm-zero-knowledge-v12.md` §4。
+`~/.claude/agents/{planner,reviewer}.md` を配置。詳細は `pm-zero-knowledge-v12.1.md` §4。
 
 **Step 2 — プロジェクトを作る**
 ```powershell
@@ -222,6 +243,11 @@ A. 危険操作は deny ルールと `guard.mjs` の2層で遮断します（38�
 **Q. なぜ v12 は機能を減らしたのですか？**
 A. 減らしたのではなく、**入場条件を変えた**結果として消えました。憲法（設定値・終了コード・hook のいずれかであること）を通らないものが落ちただけです。同じ条件を通れば、いつでも戻せます。
 
+**Q. v12.1でフロントエンド向けのSkill/MCPをまとめて入れたのですか？**
+A. いいえ。実際に使うのは既存の Playwright MCP と `/design-sync` の2つだけです。元ドキュメントが挙げていた
+ツール群は「目的なく増やさない」という同ドキュメント自身のルールに従って導入していません。既存のpm-zero内にも
+競合するフロントエンドツールの記述はなかったため、削除したものもありません。
+
 ---
 
 ## 設計思想
@@ -244,7 +270,7 @@ MIT — 自由に使用・改変・再配布できます。
 
 <div align="center">
 
-**pm-zero v12 — 実行できるものだけを、システムと呼ぶ。**
+**pm-zero v12.1 — 実行できるものだけを、システムと呼ぶ。**
 
 *Built for Claude Code. Designed for humans. Priced for students.*
 

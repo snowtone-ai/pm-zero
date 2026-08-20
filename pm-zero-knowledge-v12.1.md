@@ -1,10 +1,10 @@
-# pm-zero v12 — Executable-Only Solo-Dev OS
+# pm-zero v12.1 — Executable-Only Solo-Dev OS
 
-    Version   v12
-    Date      2026-08-16
-    Runtime   Claude Code 2.1.224 · Windows 11 · PowerShell · Claude Pro ($20/mo, no overage)
-    Replaces  v11.1.1 (deleted in this release)
-    Size      487 lines, down from v11.1.1's 1429 (66% smaller)
+    Version   v12.1
+    Date      2026-08-21
+    Runtime   Claude Code 2.1.224 · Codex CLI · Windows 11 · PowerShell · Claude Pro ($20/mo, no overage)
+    Replaces  v12 (deleted in this release)
+    Size      657 lines, up from v12's 557 — the first release since v12 to grow, by design (§16)
 
 ---
 
@@ -34,6 +34,13 @@ Three things drove the design, all established by audit rather than assumption:
    confirm the consequence: `scripts/verify.mjs` (executable) exists in 12 of 18 projects;
    not one gate-assessment artifact survives anywhere.
 
+**v12.1 adds one thing on top of that subtraction.** A separately drafted frontend/UI
+design-operations document (`AI_Agent_Design_Operating_System.md`) proposed an 8-phase workflow,
+five operating rules, and a 14-point self-critique checklist for UI work — almost all of it the
+same shape of self-graded prose judgment point 3 already rejected for the backend. Section 16
+keeps only what reduces to a check, a triggered tool invocation, or a config value, and discards
+the rest under the same constitution, not a looser one for having a UI in scope.
+
 ---
 
 ## 1. The Constitution
@@ -49,18 +56,33 @@ That is the whole of it. Three consequences, all intended:
 - **Growth has a cost again.** Every future addition must be built, not merely written. That
   is the pressure v4–v11 never had.
 
-One deliberate exception is carried, and it is named rather than smuggled: `~/.claude/CLAUDE.md`
-contains a small number of judgment-level instructions ("prefer minimal safe edits", "think
-before editing") that no exit code can express. They are kept because removing them measurably
-degrades output, and they are capped at the length of that file. They are the exception that
-must justify itself, not the default.
+One deliberate exception is carried, and it is named rather than smuggled: the global
+`~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` contain a small number of judgment-level
+instructions ("prefer minimal safe edits", "think before editing") that no exit code can
+express. They are kept because removing them measurably degrades output, and are capped at the
+length of those files. They are the exception that must justify itself, not the default.
+
+The following operator-facing judgment is part of that exception and belongs in those global
+instruction files, not in a project checklist or a self-assessed quality gate:
+
+> **Translate a non-engineer's words into the intended product outcome before implementing.**
+> Preserve the product image and the problem they are trying to solve; do not mechanically
+> implement the literal phrasing when it would miss that intent. Build code as small, cohesive
+> modules with clear boundaries so likely changes stay local, and make choices that can scale
+> when the product's actual needs require it. Do not introduce abstraction, infrastructure, or
+> generality before there is a concrete need.
+
+This is deliberately a judgment instruction rather than an architecture rule. It gives the
+agent a decision order: intended outcome first; modular, change-friendly implementation second;
+proven scale requirements third; and the smallest adequate design throughout. When an ambiguity
+would materially change the product, state the inferred intent and assumption before proceeding.
 
 ---
 
 ## 2. What pm-zero Is
 
-An operating-system-level rule set that lets one non-engineer ship software with Claude Code,
-under three constraints that are facts rather than preferences:
+An operating-system-level rule set that lets one non-engineer ship software with Claude Code or
+Codex CLI, under three constraints that are facts rather than preferences:
 
 1. **$20/month, hard wall.** Claude Pro only. No API overage, no pay-as-you-go. Budget
    discipline outranks speed.
@@ -74,9 +96,10 @@ in general.
 
 ---
 
-## 3. Default Project Structure (12 files)
+## 3. Default Project Structure (16 files)
 
-    Core (3)        CLAUDE.md · .claude/settings.json · HANDOFF-JA.md
+    Core (5)        CLAUDE.md · AGENTS.md · .claude/settings.json ·
+                    .codex/config.toml · HANDOFF-JA.md
     Ledger (5)      docs/vision.md · tasks.md · docs/state.md ·
                     docs/decisions.md · docs/issues.md
     Navigation (1)  docs/repo-map.md
@@ -90,10 +113,17 @@ Changes from v11.1.1's thirteen:
 |---|---|---|
 | `.github/workflows/ci.yml` | **added** | The only addition in v12. Section 7. |
 | `docs/lessons.md` | **removed** | Never read by anything. The learning loop now has one destination (Section 9). |
-| `AGENTS.md` | **removed** from the template | An artifact of the abandoned multi-vendor era (v9.x). pm-zero has been Claude-Code-only since v10. |
+| `AGENTS.md` | **added back** | Codex's project instruction entry point. It reads `CLAUDE.md` as the canonical shared ruleset and documents only Codex-specific mechanics; never duplicate the shared rules. |
+| `.codex/config.toml` | **added** | Deliberately empty project-scoped override file. It makes Codex support explicit; security-sensitive defaults remain global because Codex ignores them at project scope. |
 
 Optional, added only on a concrete need: `.claude/rules/*.md`, `.claude/agents/*.md`,
-`.claude/commands/*.md`, `.mcp.json`, `CONTEXT.md`, `scripts/lib/*`.
+`.claude/commands/*.md`, `.mcp.json`, `CONTEXT.md`, `scripts/lib/*`, and — for a project with a
+UI surface — `DESIGN.md`, `ASSET_REGISTRY.md` (Section 16.6).
+
+`AGENTS.md` must direct Codex to read `CLAUDE.md` first, then the same startup ledger files.
+Because Codex does not load Claude's `paths:` rules automatically, it must also instruct Codex to
+open every matching `.claude/rules/*.md` before editing a governed path. The ledger, verification,
+git workflow, and learning loop are shared; only runtime mechanics belong in `AGENTS.md`.
 
 ---
 
@@ -135,20 +165,51 @@ model that supports effort, so configuring it changed nothing.
 - `PreCompact` → checkpoint commit of the ledger files
 - `StopFailure(rate_limit|overloaded)` → checkpoint commit + a line in `docs/issues.md`
 
+**Codex** — machine-wide configuration belongs in `~/.codex/config.toml`; its global
+`AGENTS.md`, `hooks.json`, and `hooks/guard.mjs` provide the instruction and guard layers.
+The equivalent zero-prompt local-operation baseline is:
+
+| Key | Value | Why |
+|---|---|---|
+| `approval_policy` | `"never"` | No approval prompt for normal in-scope development work. |
+| `default_permissions` | `":danger-full-access"` | Codex can read, edit, build, and test the generated repository. |
+| `[apps._default].default_tools_approval_mode` | `"approve"` | Connected app tools follow the same autonomous default. |
+| `[mcp_servers.<id>].default_tools_approval_mode` | `"approve"` | Each configured MCP server follows that default independently. |
+| `[agents].max_concurrent_threads_per_session` | `4` | The Codex worker-subagent ceiling; it excludes the primary agent. |
+| `[windows].sandbox` | `"unelevated"` | On a normal Windows user token, `"elevated"` can prevent Codex from spawning the shell with `CreateProcessAsUserW` access-denied errors. |
+| `[windows].sandbox_private_desktop` | `false` | Retain the compatible desktop path for local shell and MCP process startup. |
+
+The global Codex PreToolUse hook uses a broad matcher and `~/.codex/hooks/guard.mjs` to block the
+same destructive command shapes and `.env*` access as the Claude guard (while allowing
+`.env.example`). Match the input shape (shell command or patch/file target), not a fixed Codex
+tool name: those names have changed between runtime versions. A changed hook can require a
+one-time human trust confirmation on its next use; this intentional confirmation is outside the
+normal no-prompt development baseline. Project `.codex/config.toml` is loaded only for trusted
+projects. Do not put `approval_policy`, sandbox permissions, model providers, notifications, or
+other security-sensitive settings in it: Codex ignores those project-scoped keys. Keep the file
+empty unless a genuinely project-specific, non-security override is required.
+
+Do not combine `default_permissions` with legacy `sandbox_mode` or
+`[sandbox_workspace_write]` configuration. After a Codex update, re-check the global permission
+profile, Windows sandbox settings, project-scope restrictions, and hook input shape against the
+official Codex configuration reference before changing this baseline.
+
 ---
 
 ## 5. Session Protocol (three rules, replacing v11's ten)
 
-1. **Do not split work across sessions.** Cached input bills at roughly 10% of the standard
+1. **Do not split Claude Code work across sessions.** Cached input bills at roughly 10% of the standard
    rate, and on a Claude subscription Claude Code requests the one-hour TTL automatically. A
    new session rebuilds the prefix at full price; the docs warn that the first turn back into
    a long session "can be the most expensive request you send". v11's rule 1 — one task per
    session — was therefore not merely unnecessary but actively more expensive.
-2. **`/compact` at task boundaries, and commit immediately before it.** Compaction is lossy
-   summarisation. Manual compaction at a boundary is the mechanism; the 400K auto-compact
-   window is the safety net for when it does not happen.
+2. **Checkpoint at task boundaries, and commit immediately before compaction/handoff.**
+   Compaction is lossy summarisation. In Claude Code, `/compact` is the manual mechanism and
+   the 400K auto-compact window is the safety net. In Codex, retain the same ledger checkpoint
+   discipline without importing Claude-specific cache or slash-command claims.
 3. **Delegate wide file reading** to a subagent, whose context is discarded when the summary
-   returns. Do not pull many files into the main context.
+   returns. Do not pull many files into the main context. Codex may use up to its configured
+   global worker ceiling when write scopes are disjoint.
 
 Retired from v11's protocol, with cause: Haiku-first reading (folded into rule 3), RTK
 (removed in v11.1.1 after a 425-trial paired benchmark), per-task effort escalation (Section 6),
@@ -157,7 +218,7 @@ hour on a subscription), and "stop before the wall" (the `StopFailure` hook does
 
 ---
 
-## 6. Model and Effort Routing
+## 6. Model and Effort Routing (Claude Code)
 
 **The governing fact:** model and effort level are both part of the prompt-cache key. Changing
 either mid-session recomputes the entire request. v11's routing table assumed switching was
@@ -183,6 +244,12 @@ the routing table's bottom row exists.
 
 If Opus is unavailable, `fallbackModel` substitutes Sonnet 5. The pipeline never blocks on Opus.
 
+**Codex routing is intentionally separate.** Use the model and reasoning effort configured in
+`~/.codex/config.toml`; do not copy Claude's Sonnet/Opus names, `ultrathink`, prompt-cache, or
+subscription-budget rules into `AGENTS.md`. The shared rule is operational: use a fresh-context
+reviewer for large, behaviour-changing, or hard-to-undo diffs; use worker subagents only for
+disjoint scopes; keep small fixes in the main context.
+
 ---
 
 ## 7. Quality: Executable Checks and CI
@@ -196,6 +263,7 @@ Plus, as standing requirements that are themselves executable or observable:
 - a **reproduction test** before every bug fix
 - **`gitleaks git --no-banner`** before push, when available
 - a **Japanese handoff** in `HANDOFF-JA.md` on completion
+- for a project that has adopted `DESIGN.md`, the **raw-value lint** (Section 16.2)
 
 **`.github/workflows/ci.yml` — the one addition in v12, and the most important change in it.**
 
@@ -235,7 +303,8 @@ constitution): **quick** for docs and low-risk config; **standard** = `node scri
 - **Tier 0 — deterministic.** `verify.mjs` locally, then CI on the PR. Nothing proceeds past a
   red check. This is the tier that does the work.
 - **Tier 1 — fresh context.** The `reviewer` subagent reads the diff with no implementation
-  history. Triggered when the change is large, changes behaviour, or is hard to undo.
+  history. Triggered when the change is large, changes behaviour, is hard to undo, or touches
+  shared UI components or design tokens (Section 16.5).
 
 The mechanism that makes Tier 1 work is the *fresh context*, not the model size — a reviewer
 that inherited the implementer's assumptions inherits their blind spots too. Opus is used
@@ -299,7 +368,8 @@ a matching file. v11 worried an edit could follow a search hit without a read �
 tool requires a prior read of the file in the same conversation, so edits to existing files are
 covered by the harness itself. The real gaps are creating a *new* file in a governed zone, and
 a reviewer reading only a diff. Both are handled by having the reviewer open the matching rules
-files by path rather than trusting them to arrive.
+files by path rather than trusting them to arrive. Codex follows this explicit-read path for all
+scoped rules, since it has no automatic `.claude/rules/` loading.
 
 ---
 
@@ -310,7 +380,7 @@ files by path rather than trusting them to arrive.
 | Transcript | Everything said this session | Until compaction | Nothing |
 | Auto-memory (`MEMORY.md`) | Operator preferences, environment quirks | Cross-project | Operator facts only |
 | **Ledger files (git)** | vision, tasks, state, decisions, issues, repo-map | Forever, versioned | **Everything project** |
-| `.claude/rules/*.md` | Prevention steps too situational to automate | Until they expire | Zone-scoped lessons |
+| `.claude/rules/*.md` | Prevention steps too situational to automate | Until they expire | Zone-scoped lessons; Claude loads by path, Codex reads explicitly via `AGENTS.md` |
 
 If a fact matters to the project it goes in a ledger file. If it matters to how the agent
 should treat the operator anywhere, it goes in memory. Never both.
@@ -375,6 +445,12 @@ steal.
 The decision that matters is that this is **written down**. Believing the hole is closed is the
 failure mode; knowing it is open is not.
 
+**Codex equivalent.** Codex's project file cannot enforce these boundaries. Its global
+`approval_policy`/permission defaults and global `hooks.json` + `hooks/guard.mjs` are therefore
+part of the required setup. The hook applies the same destructive-command and secret-path policy
+to shell-shaped and patch/file-shaped calls. It is fail-open on malformed hook input so a broken
+hook cannot brick a session; this is an availability choice, not a claim of a complete sandbox.
+
 ---
 
 ## 12. Git Workflow
@@ -395,7 +471,7 @@ failure mode; knowing it is open is not.
 
 ---
 
-## 13. Verified Platform Facts
+## 13. Verified Claude Code Platform Facts
 
 Every fact below was read from the official Claude Code documentation on 2026-08-16 against
 Claude Code 2.1.224. Facts pm-zero relies on but could **not** verify are listed separately.
@@ -488,3 +564,94 @@ Stated plainly, because every previous release stated only what it gained:
 
 If a future version wants to add something back, the constitution in Section 1 is the test it
 has to pass first.
+
+---
+
+## 16. Frontend/UI Operating Layer (v12.1 addition)
+
+Absorbed from a separately drafted document, `AI_Agent_Design_Operating_System.md` (2026-08-21,
+938 lines), and cut to whatever in it survives Section 1's constitution. Applies only to a
+project with a UI surface; a project without one adopts none of it.
+
+### 16.1 What survived the constitution
+
+The source document is a workflow specification: an 8-phase implementation loop, five "Agent
+Operating Rules", a 14-point self-critique checklist, a tool stack, and four proposed ledger
+files (`PRODUCT.md`, `DESIGN.md`, `UX_RULES.md`, `ASSET_REGISTRY.md`). Nearly all of it is
+judgment about hierarchy, composition, and taste — exactly the shape of self-graded assessment
+Section 7 already found unenforceable for backend quality gates, now proposed again for the
+frontend. It does not enter pm-zero. Four pieces do, because each reduces to a check, a tool
+invocation with a defined trigger, or a config value:
+
+| Source rule | pm-zero mechanism |
+|---|---|
+| §6 "Raw values" — no unregistered hex/px/radius/shadow | **verify.mjs lint check**, 16.2 |
+| §7 Rule 4 "No Blind Completion" — a screen isn't done until seen running | **Playwright MCP + `run` skill**, 16.3 |
+| §9 "User Prompt Contract" — a non-engineer can't review a diff but can react to a rendered design | **`/design-sync` + claude.ai/design**, 16.4 |
+| §7 Rule 5 / Phase 5 "Visual QA" — fresh-eyes audit of a finished screen | **Tier 1 reviewer trigger**, extended, 16.5 |
+
+### 16.2 Executable: raw-value lint
+
+Once a project has adopted `DESIGN.md` (16.6), `scripts/verify.mjs`'s lint step additionally
+rejects, in changed frontend files, arbitrary values outside a registered token:
+
+    bg-[#...]  text-[...px]  rounded-[...]  shadow-[...]  (or the equivalent in a non-Tailwind
+    styling system) unless listed under DESIGN.md's own "Design Token Rule" exception
+
+The check only tests whether a value is registered, never whether it looks good — that judgment
+stays with the operator and the Tier 1 reviewer. A project with no `DESIGN.md` does not run it.
+
+### 16.3 Executable: browser self-verification before "done"
+
+Already global policy ("start the dev server and use the feature in a browser before reporting
+the task as complete"); this names the specific tool. Before a UI completion report: run the
+project (`run` skill), check the changed screen with Playwright MCP at the breakpoints the
+change touches, confirm no console/runtime error. Code-reading is not a substitute.
+
+### 16.4 Executable: show the design to the user
+
+Run `/design-login` once per machine, then `/design-sync` once per project, so Claude Design
+generates against the project's actual components instead of placeholders (requires Claude Code
+2.1.198+ on the Anthropic API — both already true of this runtime). For a change big enough to
+need sign-off before or mid-implementation — a new screen, a visual-direction change, the source
+document's "ハイクオリティにして" case — generate the design at claude.ai/design and show it to
+the operator instead of deciding unilaterally. The operator cannot review a diff; they can react
+to a rendered design. This is Rule 4 applied to the human rather than the agent.
+
+### 16.5 Tier 1 reviewer: UI/visual changes as a trigger
+
+Section 8's trigger list gains one member: a change that touches shared components or design
+tokens. The reviewer opens `DESIGN.md` and whatever screenshots 16.3 captured, and checks token
+reuse, component reuse, and cross-screen consistency — the fresh-context substitute for the
+source document's Phase 5 "Visual QA", which this operator cannot self-administer any more
+reliably than the seven backend gates Section 7 already deleted for the same reason.
+
+### 16.6 Optional files, added only on concrete need
+
+Same rule as every other optional file in Section 3.
+
+    DESIGN.md          tokens, typography, spacing/radius scale, component rules, motion —
+                        the registry 16.2 reads
+    ASSET_REGISTRY.md  name / type / source / license / context per asset — only once a
+                        project has enough assets that duplication is a real risk
+
+`PRODUCT.md` and `UX_RULES.md` from the source document are not added: `docs/vision.md` already
+carries product purpose and priorities, and per-feature UX principles are judgment calls of the
+kind Section 1's global-file exception already covers, not a new ledger file.
+
+### 16.7 Tool stack: named, not installed
+
+Two tools are used, both already available: **Playwright MCP** (16.3) and **`/design-sync`**
+(16.4). The source document's remaining stack — Impeccable, shadcn/ui, better-design, Awesome
+Claude Design, Lucide, Rive, Lottie, Magic UI, Aceternity UI, Context7, Chrome DevTools MCP — is
+not deployed by this release. It follows the source document's own rule ("do not add Skill/MCP
+without purpose"): added individually, per project, only when a concrete need names one. No
+existing pm-zero content named a competing frontend tool, so this release removes nothing.
+
+### 16.8 Migration from v12
+
+No global config, hook, or settings change. `AI_Agent_Design_Operating_System.md` is absorbed
+into this section and deleted; `pm-zero-knowledge-v12.md` is deleted, superseded by this file.
+Per-project, applied only when the project next does UI work: adopt `DESIGN.md` when there is a
+token system to register; run `/design-login` once per machine and `/design-sync` once per
+project before relying on 16.4.
