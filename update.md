@@ -698,15 +698,43 @@ the operator specifically wanted the Claude Code `/design-sync` mechanism (not a
 included as the way to put a rendered design in front of a non-engineer before or during
 implementation, rather than relying only on the agent's own Playwright verification.
 
-### 10-2. What did not pass, and why that is not a loss
+### 10-2. The tool stack: verified, then split by scope (T1–T2)
 
-The rejected material was not deleted from a working system; it was never granted entry. Its
-tool stack (Impeccable, shadcn/ui, better-design, Awesome Claude Design, Lucide, Rive, Lottie,
-Magic UI, Aceternity UI, Context7, Chrome DevTools MCP) is not deployed — only Playwright MCP and
-`/design-sync` are, and both were already available before this release. `PRODUCT.md` and
-`UX_RULES.md` are not added as ledger files: `docs/vision.md` already carries product purpose and
-priorities, and per-feature UX principles are judgment calls of the kind Section 1's global-file
-exception already covers.
+The first pass of this release left the source document's tool stack entirely undeployed. The
+operator pushed back: the point of "integrate as the frontend system" was for the tools to
+actually be available, not merely documented as deferred. Before deploying anything, every name
+was checked against what actually exists — a subagent research pass first, then independent
+verification of the two claims that mattered operationally:
+
+| Name | What it actually is | Verified against |
+|---|---|---|
+| `frontend-design` | Official Anthropic plugin (`claude-code-plugins` marketplace), 796,950 installs | anthropics/claude-code repo, claude.com/plugins/frontend-design |
+| Impeccable | Third-party (pbakaus), builds on `frontend-design`; `npx impeccable install` writes `.claude/skills/impeccable/` **into the project it's run in** | github.com/pbakaus/impeccable |
+| shadcn/ui Skill | Official (shadcn team); reads the project's own `components.json` on every run | ui.shadcn.com/docs/skills — install command `npx skills add shadcn/ui` |
+| Context7 | MCP server for version-specific library docs; not frontend-specific | context7.com/docs/clients/claude-code |
+| Chrome DevTools MCP | Official Google Chrome DevTools team repo is `ChromeDevTools/chrome-devtools-mcp` — a subagent's first pass cited `benjaminr/chrome-devtools-mcp`, an unofficial fork, and was corrected before anything was installed | github.com/ChromeDevTools/chrome-devtools-mcp |
+| Awesome Claude Design, `tweakcn` | A curated reference list and an external web app (tweakcn.com) — neither is a Claude Code integration | Confirmed not installable |
+
+**T1 — global, deployed as part of this release.** `frontend-design` and `context7` have the
+same value in every session and cost their tool-schema weight once, not per project:
+
+    claude plugin marketplace add anthropics/claude-code
+    claude plugin install frontend-design@claude-code-plugins
+    claude mcp add --scope user context7 -- npx -y @upstash/context7-mcp
+
+Both verified connected via `claude plugin list` / `claude mcp list` on 2026-08-21.
+
+**T2 — per-project, auto-provisioned rather than asked about.** Impeccable, the shadcn/ui Skill,
+and Chrome DevTools MCP each depend on the project they run in (a written skill directory, a
+project's own `components.json`, or simply being dead weight in a session with nothing to
+inspect in a browser). These are not installed today; they become a `scripts/verify.mjs`
+sibling step — `scripts/setup.mjs` detects a frontend-framework dependency in `package.json` (or
+an already-adopted `DESIGN.md`) and runs all three with no prompt, consistent with this
+operator's zero-prompt baseline. See §16.7 of the knowledge file for the exact commands.
+
+`PRODUCT.md` and `UX_RULES.md` are still not added as ledger files: `docs/vision.md` already
+carries product purpose and priorities, and per-feature UX principles are judgment calls of the
+kind Section 1's global-file exception already covers.
 
 **Conflicting existing tooling: none found.** The instruction to prefer the new document over
 any existing competing frontend tooling was checked against `pm-zero-knowledge-v12.md`,
@@ -723,20 +751,27 @@ starts, following the same rule as every other optional file in the template.
 ### 10-4. What v12.1 costs
 
 The first size increase since the constitution shipped: `pm-zero-knowledge-v12.md`'s 557 lines
-(post the in-progress Codex CLI additions) become 657. No global config, hook, or settings
-change — the cost is entirely in the spec file and in one more thing (Section 16) an operator
-must know exists, the opposite direction from v12's whole premise. It is accepted because the
-alternative — a second, separately maintained UI-operations document outside pm-zero's own
-constitution — is exactly the kind of ungoverned growth v12 existed to stop.
+(post the in-progress Codex CLI additions) become 683. **Global config changed for the first
+time under this constitution** — a plugin and an MCP server, both user-scoped — which v12 itself
+never did. The cost is in the spec file, in the deployed global state, and in a `setup.mjs` step
+every future UI project now runs unprompted; that last one is the operator trading a manual
+per-project decision for a machine-checkable one, the same trade the constitution already makes
+everywhere else. It is accepted because the alternative — three tools re-evaluated from scratch
+on every new project, or a UI-operations document maintained outside pm-zero's own constitution
+— is exactly the kind of ungoverned, unrepeatable decision-making v12 existed to stop.
 
 ### 10-5. Files
 
 Repository: `pm-zero-knowledge-v12.1.md` added (renamed from `pm-zero-knowledge-v12.md` with
 Section 16 and cross-references added); `pm-zero-knowledge-v12.md` deleted;
 `AI_Agent_Design_Operating_System.md` deleted, absorbed into Section 16; `README.md` updated
-(version, spec line count, a new "v12 → v12.1" section, one FAQ entry); `update.md` — this
+(version, spec line count, a new "v12 → v12.1" section, two FAQ entries); `update.md` — this
 section.
+Global (deployed, not just documented): `frontend-design@claude-code-plugins` (plugin, user
+scope) and `context7` (MCP, user scope) — added via `claude plugin install` / `claude mcp add`
+and verified connected, both on 2026-08-21.
 
 No per-project migration is required until a project next does UI work; at that point, Section
-16.8 applies (`DESIGN.md` when there is a token system to register; `/design-login` once per
-machine and `/design-sync` once per project before relying on K3).
+16.7's auto-provisioning step fires, and separately Section 16.8 applies (`DESIGN.md` when there
+is a token system to register; `/design-login` once per machine and `/design-sync` once per
+project before relying on K3).

@@ -4,7 +4,7 @@
     Date      2026-08-21
     Runtime   Claude Code 2.1.224 · Codex CLI · Windows 11 · PowerShell · Claude Pro ($20/mo, no overage)
     Replaces  v12 (deleted in this release)
-    Size      657 lines, up from v12's 557 — the first release since v12 to grow, by design (§16)
+    Size      683 lines, up from v12's 557 — the first release since v12 to grow, by design (§16)
 
 ---
 
@@ -639,19 +639,45 @@ Same rule as every other optional file in Section 3.
 carries product purpose and priorities, and per-feature UX principles are judgment calls of the
 kind Section 1's global-file exception already covers, not a new ledger file.
 
-### 16.7 Tool stack: named, not installed
+### 16.7 Tool stack: global once, per project on detection
 
-Two tools are used, both already available: **Playwright MCP** (16.3) and **`/design-sync`**
-(16.4). The source document's remaining stack — Impeccable, shadcn/ui, better-design, Awesome
-Claude Design, Lucide, Rive, Lottie, Magic UI, Aceternity UI, Context7, Chrome DevTools MCP — is
-not deployed by this release. It follows the source document's own rule ("do not add Skill/MCP
-without purpose"): added individually, per project, only when a concrete need names one. No
-existing pm-zero content named a competing frontend tool, so this release removes nothing.
+Every name in the source document's stack was checked against what actually exists (most did;
+"Awesome Claude Design" and `tweakcn` are a reference list and an external web app, not Claude
+Code integrations, and are not installed anywhere). What exists splits cleanly into two groups by
+a single criterion: **does its value depend on which project it runs in?**
+
+**Global — installed once, deployed as part of this release, because the value is the same in
+every session and the tool-schema cost is paid once, not per project:**
+
+    frontend-design@claude-code-plugins   Anthropic's official design-framework plugin.
+                                            claude plugin marketplace add anthropics/claude-code
+                                            claude plugin install frontend-design@claude-code-plugins
+    context7                               Library-doc lookup MCP; not frontend-specific.
+                                            claude mcp add --scope user context7 -- npx -y @upstash/context7-mcp
+
+**Per-project, auto-provisioned on UI detection — because each depends on that project's own
+files (a `components.json`, a written skill directory) or is dead weight in a session with no
+browser to inspect.** This is a `scripts/setup.mjs` step, run once, alongside the existing
+`npm install`: if `package.json` depends on a frontend framework (`react`, `vue`, `svelte`,
+`solid-js`, `next`, `nuxt`, `astro`, `@angular/core`) or the project has already adopted
+`DESIGN.md` (16.6), then and only then —
+
+    npx impeccable install                                    (writes .claude/skills/impeccable/)
+    npx skills add shadcn/ui                                  (only if shadcn/ui is a dependency)
+    claude mcp add --scope project chrome-devtools -- npx chrome-devtools-mcp@latest
+                                                                (github.com/ChromeDevTools/chrome-devtools-mcp)
+
+No UI surface detected → none of the three run, and nothing asks the operator — consistent with
+the zero-prompt autonomy baseline already in effect. A project that gains a UI surface later
+re-runs `setup.mjs` the next time it is invoked, which re-checks the same condition.
 
 ### 16.8 Migration from v12
 
-No global config, hook, or settings change. `AI_Agent_Design_Operating_System.md` is absorbed
-into this section and deleted; `pm-zero-knowledge-v12.md` is deleted, superseded by this file.
-Per-project, applied only when the project next does UI work: adopt `DESIGN.md` when there is a
-token system to register; run `/design-login` once per machine and `/design-sync` once per
-project before relying on 16.4.
+Global config changed for the first time under this constitution, deployed as part of this
+release: `frontend-design@claude-code-plugins` (plugin, user scope) and `context7` (MCP, user
+scope) — both installed and verified connected on 2026-08-21. No hook or settings-file change.
+`AI_Agent_Design_Operating_System.md` is absorbed into this section and deleted;
+`pm-zero-knowledge-v12.md` is deleted, superseded by this file. Per-project, applied the next
+time `scripts/setup.mjs` runs on a project with a UI surface: the 16.7 auto-provisioning step
+fires; separately, adopt `DESIGN.md` when there is a token system to register, and run
+`/design-login` once per machine before relying on 16.4.

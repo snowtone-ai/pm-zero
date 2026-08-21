@@ -17,7 +17,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20PowerShell-blue?style=flat-square&logo=powershell)](https://learn.microsoft.com/powershell)
 [![Version](https://img.shields.io/badge/version-v12.1-green?style=flat-square)]()
 [![Plan](https://img.shields.io/badge/budget-Claude%20Pro%20%2420%2Fmo%20only-purple?style=flat-square)]()
-[![Spec](https://img.shields.io/badge/spec-657%20lines-brightgreen?style=flat-square)]()
+[![Spec](https://img.shields.io/badge/spec-683%20lines-brightgreen?style=flat-square)]()
 
 </div>
 
@@ -118,9 +118,17 @@ scripts/verify.mjs   →  lint / typecheck / test / build
 | 完成画面の第三者視点QA | **Tier 1 レビュアーの発火条件**に「UI/デザイントークンの変更」を追加 |
 
 `DESIGN.md`・`ASSET_REGISTRY.md` は UI を持つプロジェクトだけが、必要になった時点で追加する任意ファイルです
-（既存の `.claude/rules/*.md` などと同じ扱い）。Impeccable・shadcn/ui・better-design など元ドキュメントが
-挙げていたツール群は導入しません——「目的なくSkill/MCPを増やさない」という元ドキュメント自身のルールに従い、
-具体的な必要が出た時にプロジェクト単位で入れます。詳細は `pm-zero-knowledge-v12.1.md` §16。
+（既存の `.claude/rules/*.md` などと同じ扱い）。元ドキュメントが挙げていたツール群は、実在確認のうえ
+2つに分けました。
+
+- **グローバルに一度だけ導入**（今回実施済み）：`frontend-design@claude-code-plugins`（Anthropic公式プラグイン）、
+  `context7`（ライブラリドキュメント参照MCP、フロントエンド専用ではない）
+- **UIのあるプロジェクトだけ、自動で導入**（`scripts/setup.mjs` の一部。操作者に確認は取らない）：
+  `package.json` がreact/vue/svelte等のフロントエンド依存を持つ場合に限り、`npx impeccable install`・
+  `npx skills add shadcn/ui`（shadcn/ui使用時のみ）・`chrome-devtools-mcp`をプロジェクトスコープで追加
+
+Awesome Claude DesignとtweakcnはClaude Codeの統合対象ではない（参考リストと外部Webツール）ため、
+どこにも導入していません。詳細は `pm-zero-knowledge-v12.1.md` §16。
 
 ---
 
@@ -244,9 +252,10 @@ A. 危険操作は deny ルールと `guard.mjs` の2層で遮断します（38�
 A. 減らしたのではなく、**入場条件を変えた**結果として消えました。憲法（設定値・終了コード・hook のいずれかであること）を通らないものが落ちただけです。同じ条件を通れば、いつでも戻せます。
 
 **Q. v12.1でフロントエンド向けのSkill/MCPをまとめて入れたのですか？**
-A. いいえ。実際に使うのは既存の Playwright MCP と `/design-sync` の2つだけです。元ドキュメントが挙げていた
-ツール群は「目的なく増やさない」という同ドキュメント自身のルールに従って導入していません。既存のpm-zero内にも
-競合するフロントエンドツールの記述はなかったため、削除したものもありません。
+A. いいえ、まとめては入れていません。実在確認のうえ、汎用的で軽量なもの（`frontend-design`公式プラグイン・
+`context7`）だけをグローバルに一度入れ、UI固有で個々のプロジェクトに依存するもの（Impeccable・shadcn Skill・
+Chrome DevTools MCP）は「UIのあるプロジェクトでだけ自動導入」に留めました。既存のpm-zero内にも競合する
+フロントエンドツールの記述はなかったため、削除したものもありません。
 
 ---
 
