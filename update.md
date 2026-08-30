@@ -8,12 +8,13 @@ Version deltas, migration steps, and the reasons behind each change. The
 
 | File | Status |
 |---|---|
-| `pm-zero-knowledge-v12.1.md` | Current. Sole active line |
+| `pm-zero-knowledge-v12.2.md` | Current. Sole active line |
 | `pm-zero-knowledge-v10.md` | Historical reference. Some v11.x templates still cite its section numbers |
 
 `pm-zero-knowledge-v11.1.1.md` was removed on 2026-08-16 when superseded by
 `pm-zero-knowledge-v12.md` (Section 9); `pm-zero-knowledge-v12.md` was itself removed on
-2026-08-21 when superseded by `pm-zero-knowledge-v12.1.md` (Section 10).
+2026-08-21 when superseded by `pm-zero-knowledge-v12.1.md` (Section 10); v12.1 was removed on
+2026-08-30 when superseded by `pm-zero-knowledge-v12.2.md` (Section 11).
 
 `pm-zero-knowledge-v11.md` and `pm-zero-knowledge-v11.1.md` were removed on 2026-07-27: both are
 complete subsets of the two files that were current at that time, and both carried claims the
@@ -60,17 +61,20 @@ v11.1 2026-07-23  + platform facts refreshed, prose -> harness      [removed 202
 v12   2026-08-16  executable-only; first subtractive release       [removed 2026-08-21]
   |
   v
-v12.1 2026-08-21  + frontend/UI operating layer, cut to the same constitution
-                                                   -> pm-zero-knowledge-v12.1.md
+v12.1 2026-08-21  + frontend/UI operating layer                 [removed 2026-08-30]
+  |
+  v
+v12.2 2026-08-30  old UI layer withdrawn; live capability gate + direct UI directives
+                                                   -> pm-zero-knowledge-v12.2.md
 ```
 
 v11.1.1 and v11.2 were siblings, not a sequence. Both corrected the same set of v11.1 errors.
 They differed in where they stopped: v11.1.1 stopped exactly where new programs would begin;
 v11.2 crossed that line deliberately and shipped the programs. v11.2 was discontinued on
-2026-08-16 (Section 8); v11.1.1 was superseded by v12 the same day (Section 9). v12.1 is the
-first release since the constitution shipped to *add* rather than subtract — a single frontend/UI
-layer, admitted only where it reduced to a check, a triggered tool call, or a config value
-(Section 10).
+2026-08-16 (Section 8); v11.1.1 was superseded by v12 the same day (Section 9). v12.1 added a
+frontend/UI layer on 2026-08-21 (Section 10), but applied the executable-gate test to product
+direction and failed to preserve the operator's intent. v12.2 withdraws that layer and separates
+falsifiable quality evidence from direct product constraints (Section 11).
 
 ---
 
@@ -672,6 +676,9 @@ strip it to current blockers; delete `docs/lessons.md` and `AGENTS.md` where unu
 
 ## 10. v12 → v12.1 (2026-08-21)
 
+> **Historical record only.** v12.2 withdrew every frontend/UI rule, special file, and tool
+> default described in this section. None of it is an active pm-zero instruction; see Section 11.
+
 **pm-zero's first additive release since the constitution shipped.** Triggered by a separately
 drafted document, `AI_Agent_Design_Operating_System.md` (938 lines), proposing a frontend/UI
 design-operations workflow for this operator's projects. Rather than adopt it as written, it was
@@ -775,3 +782,91 @@ No per-project migration is required until a project next does UI work; at that 
 16.7's auto-provisioning step fires, and separately Section 16.8 applies (`DESIGN.md` when there
 is a token system to register; `/design-login` once per machine and `/design-sync` once per
 project before relying on K3).
+
+---
+
+## 11. v12.1 → v12.2 (2026-08-30)
+
+**A replacement, not an iteration on the previous frontend layer.** The operator reported that
+v12.1 did not produce the intended frontend result and directed that all frontend-related material
+be revoked before rebuilding. The defect was conceptual: v12.1 applied the executable-quality-
+gate constitution to product direction. That correctly rejected self-issued quality certificates,
+but incorrectly discarded the concrete constraints that define the product the operator wants.
+v12.2 distinguishes the two. Quality claims still require executable evidence; explicit product
+constraints and mandatory work-order steps may be direct prose with a concrete trigger and an
+observable result.
+
+### 11-1. Full withdrawal of the v12.1 frontend layer
+
+Removed from the active specification: raw-value/token lint; Playwright plus run-skill browser
+mandate; design-login/design-sync flow; UI-specific reviewer trigger; special `DESIGN.md` and
+`ASSET_REGISTRY.md` roles; global frontend-design plugin and Context7 MCP defaults; and automatic
+Impeccable, shadcn skill, or Chrome tooling triggered by framework detection. Section 10 is kept
+only as labelled release history. No v12.1 frontend mechanism is reused as the basis of the new
+rules.
+
+### 11-2. Global baseline and per-project capability gate
+
+The pm-zero-managed global MCP baseline is now exactly **Chrome DevTools MCP** for Claude Code and
+Codex. Google's official repository is the canonical install and security source:
+https://github.com/ChromeDevTools/chrome-devtools-mcp. Independently enabled account connectors
+remain outside pm-zero's baseline.
+
+Every project now pauses after task discovery and before implementation to Web-search current
+official or maintainer information, compare capabilities, maintenance, compatibility, auth/data
+exposure, permissions, context cost, overlap, licence, and reproducibility, then install the
+minimum suitable set at project scope. MCP is preferred when it directly exposes the required
+external data/tool/action; a skill is used for reusable instructions/scripts; a plugin is used
+only when bundling and distribution add value. Definitions were rechecked against:
+
+- OpenAI MCP: https://learn.chatgpt.com/docs/extend/mcp
+- OpenAI skills: https://learn.chatgpt.com/docs/build-skills
+- OpenAI plugins: https://learn.chatgpt.com/docs/build-plugins
+- Claude Code MCP: https://code.claude.com/docs/en/mcp
+- Claude Code plugins: https://code.claude.com/docs/en/plugins
+
+### 11-3. New frontend directives
+
+The replacement layer starts from the requested product outcome:
+
+1. Before design, Web-search comparable shipped products and select exactly one strongest UI as
+   the structural and interaction model; copy neither brand nor proprietary assets.
+2. Give each page one dominant job and move subordinate jobs/details to named child pages. Reject
+   dense all-in-one screens.
+3. Reject card/panel collections and nested decorative boxes. Authored UI surfaces and controls
+   have square corners (`border-radius: 0`); no rounded cards, buttons, inputs, badges, or pills.
+4. Use one external hierarchy system: **Apple Human Interface Guidelines**. Essential information
+   comes first and gets space; position/grouping, typography, spacing/alignment, then contrast and
+   color communicate importance. Color is never the only signal. The operator's square-corner and
+   anti-panel constraints override Apple's visual styling.
+5. Every action gives immediate feedback. Short, restrained, interruptible transitions preserve
+   continuity without blocking input; reduced-motion users receive an instant/non-motion path.
+6. Effects, animations, transition assets, and sounds are searched from existing high-quality,
+   licensed sources. The AI does not generate them. Unsuitable or unlicensed assets are omitted.
+7. Chrome DevTools MCP supplies observable completion evidence across changed routes, actions,
+   and supported widths.
+
+Apple was selected as the one hierarchy source because its official guidance covers the full
+requested chain—simplicity, progressive disclosure, placement, typography, color, and purposeful
+motion—in one coherent system:
+
+- https://developer.apple.com/design/human-interface-guidelines/design-principles
+- https://developer.apple.com/design/human-interface-guidelines/layout
+- https://developer.apple.com/design/human-interface-guidelines/typography
+- https://developer.apple.com/design/human-interface-guidelines/color
+- https://developer.apple.com/design/human-interface-guidelines/motion
+
+### 11-4. Files and carried work
+
+Repository: `pm-zero-knowledge-v12.1.md` replaced by `pm-zero-knowledge-v12.2.md`; `README.md`
+updated for the new baseline and rules; `update.md` records this migration. Pre-existing
+uncommitted non-frontend refinements were reviewed and retained: pointer-based startup, isolated
+generated-output writes, precise fresh-review triggers, deterministic reproductions, layered
+verification, learning-gate cost control, and single-owner ledger rules. The proposed global
+CodeGraph MCP entry was dropped because it conflicts with the Chrome-only baseline; edits within
+the withdrawn frontend section were dropped with that section.
+
+Global deployment: remove user-scoped frontend-design, Context7, and Playwright defaults; install
+or retain the official Chrome DevTools MCP as the only pm-zero-managed global MCP for both CLI
+runtimes. Verified on 2026-08-30: resolved package version `1.8.0`; Claude reports the user-scoped
+server connected, and Codex reports its sole configured MCP enabled.

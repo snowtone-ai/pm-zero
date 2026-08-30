@@ -7,25 +7,25 @@
 ██╔═══╝ ██║╚██╔╝██║       ███╔╝  ██╔══╝  ██╔══██╗██║   ██║
 ██║     ██║ ╚═╝ ██║      ███████╗███████╗██║  ██║╚██████╔╝
 ╚═╝     ╚═╝     ╚═╝      ╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝
-                                                     v12.1
+                                                     v12.2
 ```
 
-**Executable-Only Solo-Dev OS — Claude Code × Windows PowerShell × Claude Pro**
+**Executable-Core Solo-Dev OS — Claude Code × Codex × Windows PowerShell × Claude Pro**
 
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/runtime-Claude%20Code%202.1.224-orange?style=flat-square&logo=anthropic)](https://code.claude.com)
+[![Claude Code](https://img.shields.io/badge/runtime-Claude%20Code%202.1.241-orange?style=flat-square&logo=anthropic)](https://code.claude.com)
 [![Platform](https://img.shields.io/badge/platform-Windows%20PowerShell-blue?style=flat-square&logo=powershell)](https://learn.microsoft.com/powershell)
-[![Version](https://img.shields.io/badge/version-v12.1-green?style=flat-square)]()
+[![Version](https://img.shields.io/badge/version-v12.2-green?style=flat-square)]()
 [![Plan](https://img.shields.io/badge/budget-Claude%20Pro%20%2420%2Fmo%20only-purple?style=flat-square)]()
-[![Spec](https://img.shields.io/badge/spec-683%20lines-brightgreen?style=flat-square)]()
+[![Spec](https://img.shields.io/badge/spec-760%20lines-brightgreen?style=flat-square)]()
 
 </div>
 
 ---
 
 > **月20ドルの固定予算で、エンジニアでなくてもソフトウェアを出荷できる。**
-> v12 の主眼は機能追加ではなく**削除**にあり、v12.1 はその上に憲法を通過した
-> **フロントエンド/UI運用層**だけを足す。
+> v12.2 は旧フロントエンド層を全撤廃し、実装前の能力選定と、意図した画面を
+> 直接規定するプロダクト指令をゼロから組み直す。
 
 Status: 継続開発中
 
@@ -33,7 +33,7 @@ Status: 継続開発中
 
 ## これは何か
 
-**pm-zero v12.1** は、Claude Code を使ったソロ開発を自律化するための **OSレベルのルールセット**です。
+**pm-zero v12.2** は、Claude Code と Codex を使ったソロ開発を自律化するための **OSレベルのルールセット**です。
 
 v12 は pm-zero の歴史で**初めて、引き算を主目的とした**リリースです。
 v4.0 から v11.1 まで、ほぼすべてのバージョンが足し算でした。理由は単純で、**散文のルールを1行足すコストがゼロ**だったからです。書くのも維持するのも無料なので、増加に抵抗する力がどこにもありませんでした。結果、1429行——その運用者自身が把握できない仕様書ができあがりました。
@@ -44,13 +44,16 @@ v4.0 から v11.1 まで、ほぼすべてのバージョンが足し算でし�
 
 ## v12 の唯一の憲法
 
-> **設定値・スクリプトの終了コード・hook のいずれかとして書けないものは、pm-zero に入れない。**
+> **品質を通過したという主張は、設定値・スクリプトの終了コード・hook のいずれかで証明する。**
 
 これだけです。帰結は3つ、すべて意図的なものです。
 
-- **散文のアドバイスは入場資格を失う。** チェックとして書けない教訓は、たいてい最初からルールではありませんでした。
+- **自己採点の散文は証拠にならない。** チェックとして書けない品質主張を、通過済みとは報告できません。
 - **品質の主張が反証可能になる。** 「設計は健全である」は v12 が主張できない文です。「`node scripts/verify.mjs` が 0 で終了する」は主張できます。
 - **増加に再びコストが発生する。** 今後の追加は「書く」だけでなく「作る」必要があります。v4〜v11 に一度もなかった圧力です。
+
+操作者が定める具体的なプロダクト制約と、発火条件・観測結果が明確な作業手順は別です。
+それらは品質の自己採点ではないため、必要な指令として明文化します。v12.2 のフロントエンド規則はこの区分です。
 
 ---
 
@@ -104,31 +107,22 @@ scripts/verify.mjs   →  lint / typecheck / test / build
 
 ---
 
-## v12 → v12.1：フロントエンド/UI運用層の追加
+## v12.1 → v12.2：旧フロントエンド層の全撤廃と再設計
 
-外部で書かれたUI/UXデザイン運用ドキュメント（8フェーズのワークフロー、14項目の自己採点チェックリストなど）を
-統合する話が持ち上がりましたが、その中身のほとんどは**バックエンド向けに削った7つの品質ゲートと同じ形**——
-自己採点の作文——でした。憲法は例外を作りません。同じ基準で切り、通ったものだけを4つ採用しました。
+v12.1 はフロントエンドの意図まで「実行可能な品質ゲートか」で濾過し、欲しかった画面の方向性を落としていました。
+そこで旧層を部分修正せず、関連する規則・ファイル・ツール既定をすべて撤廃してから、次の2段階を新設しました。
 
-| 元ドキュメントのルール | pm-zeroでの実装 |
+| 段階 | v12.2 の指令 |
 |---|---|
-| 未登録の色・余白・角丸を使わない | `verify.mjs` の**lintチェック**（`DESIGN.md` 採用時のみ） |
-| 実ブラウザで見るまで完了にしない | 既存の **Playwright MCP + `run` スキル** |
-| 非エンジニアはdiffを読めないが、デザインを見れば反応できる | **`/design-sync` + claude.ai/design** でデザインを提示 |
-| 完成画面の第三者視点QA | **Tier 1 レビュアーの発火条件**に「UI/デザイントークンの変更」を追加 |
+| 実装前の能力選定 | 毎プロジェクトで最新情報をWeb調査し、必要なMCP・plugin・skillだけをプロジェクトスコープで導入。適合度が同じならMCPを優先 |
+| フロントエンド設計 | 類似プロダクトを調査してモデルを1つ選ぶ。Apple HIGだけを階層原則に採用し、各ページを単一目的に分解 |
+| 画面構成 | カード/パネルの集合と角丸UIを禁止。過剰な情報は子ページへ分離し、連続したキャンバス、文字、余白、配置で階層化 |
+| インタラクション | 全操作に即時フィードバックを返し、短く中断可能な動きで遷移・状態変化を連続させる。reduced motionにも対応 |
+| アセット | エフェクト・アニメーション・効果音は既存の高品質なライセンス済み資産をWeb検索。AIは生成しない |
+| 完了確認 | Chrome DevTools MCPで実画面・主要操作・各対応幅を確認し、モデル/出典/経路/結果を既存タスクへ記録 |
 
-`DESIGN.md`・`ASSET_REGISTRY.md` は UI を持つプロジェクトだけが、必要になった時点で追加する任意ファイルです
-（既存の `.claude/rules/*.md` などと同じ扱い）。元ドキュメントが挙げていたツール群は、実在確認のうえ
-2つに分けました。
-
-- **グローバルに一度だけ導入**（今回実施済み）：`frontend-design@claude-code-plugins`（Anthropic公式プラグイン）、
-  `context7`（ライブラリドキュメント参照MCP、フロントエンド専用ではない）
-- **UIのあるプロジェクトだけ、自動で導入**（`scripts/setup.mjs` の一部。操作者に確認は取らない）：
-  `package.json` がreact/vue/svelte等のフロントエンド依存を持つ場合に限り、`npx impeccable install`・
-  `npx skills add shadcn/ui`（shadcn/ui使用時のみ）・`chrome-devtools-mcp`をプロジェクトスコープで追加
-
-Awesome Claude DesignとtweakcnはClaude Codeの統合対象ではない（参考リストと外部Webツール）ため、
-どこにも導入していません。詳細は `pm-zero-knowledge-v12.1.md` §16。
+グローバルなpm-zero既定は **Chrome DevTools MCPだけ**です。それ以外は、実装直前の能力選定を通過した場合だけ
+プロジェクトへ追加します。詳細は `pm-zero-knowledge-v12.2.md` §§16–18。
 
 ---
 
@@ -171,12 +165,14 @@ deny も hook も、**ファイルを自分で開くスクリプト**（`node -e
 
 ---
 
-## ファイル構成（12ファイル）
+## ファイル構成（16ファイル）
 
 ```
 my-project/
 ├── CLAUDE.md                     ← 主指令。毎ターン読み込み
+├── AGENTS.md                     ← Codex入口。共有規則はCLAUDE.mdを参照
 ├── .claude/settings.json         ← 薄いプロジェクト設定
+├── .codex/config.toml            ← プロジェクト固有の非セキュリティ設定のみ
 ├── docs/
 │   ├── vision.md                 ← プロダクトの北極星
 │   ├── state.md                  ← 現在の実行ポインタ
@@ -193,7 +189,8 @@ my-project/
 └── .gitignore
 ```
 
-v11.1.1 の13ファイルから：`ci.yml` を**追加**、`docs/lessons.md`（何も読まない）と `AGENTS.md`（マルチベンダー時代の遺物）を**削除**。
+コア5、台帳5、ナビゲーション1、実行系3、補助2。追加のMCP・plugin・skillはファイル数に含めず、
+実装直前の能力選定を通過したプロジェクトにだけ導入します。
 
 ---
 
@@ -215,7 +212,8 @@ v11.1.1 の13ファイルから：`ci.yml` を**追加**、`docs/lessons.md`（�
 
 **Step 1 — グローバル設定（初回のみ）**
 `~/.claude/settings.json`、`~/.claude/hooks/guard.mjs`、`~/.claude/CLAUDE.md`、
-`~/.claude/agents/{planner,reviewer}.md` を配置。詳細は `pm-zero-knowledge-v12.1.md` §4。
+`~/.claude/agents/{planner,reviewer}.md` を配置。Claude CodeとCodexのグローバルMCP既定は
+Chrome DevToolsだけにします。詳細は `pm-zero-knowledge-v12.2.md` §4。
 
 **Step 2 — プロジェクトを作る**
 ```powershell
@@ -251,11 +249,10 @@ A. 危険操作は deny ルールと `guard.mjs` の2層で遮断します（38�
 **Q. なぜ v12 は機能を減らしたのですか？**
 A. 減らしたのではなく、**入場条件を変えた**結果として消えました。憲法（設定値・終了コード・hook のいずれかであること）を通らないものが落ちただけです。同じ条件を通れば、いつでも戻せます。
 
-**Q. v12.1でフロントエンド向けのSkill/MCPをまとめて入れたのですか？**
-A. いいえ、まとめては入れていません。実在確認のうえ、汎用的で軽量なもの（`frontend-design`公式プラグイン・
-`context7`）だけをグローバルに一度入れ、UI固有で個々のプロジェクトに依存するもの（Impeccable・shadcn Skill・
-Chrome DevTools MCP）は「UIのあるプロジェクトでだけ自動導入」に留めました。既存のpm-zero内にも競合する
-フロントエンドツールの記述はなかったため、削除したものもありません。
+**Q. MCP・plugin・skillは何がグローバルに入りますか？**
+A. pm-zeroの既定は **Chrome DevTools MCPだけ**です。それ以外はプロジェクトと実装内容を理解した後、
+公式情報をWeb調査して必要最小限をプロジェクトスコープへ導入します。外部のデータや操作を直接扱えるなら
+MCPを優先し、手順だけならskill、配布単位として束ねる価値がある場合だけpluginを選びます。
 
 ---
 
@@ -279,7 +276,7 @@ MIT — 自由に使用・改変・再配布できます。
 
 <div align="center">
 
-**pm-zero v12.1 — 実行できるものだけを、システムと呼ぶ。**
+**pm-zero v12.2 — 証明できる品質と、明確なプロダクト意図を分けて扱う。**
 
 *Built for Claude Code. Designed for humans. Priced for students.*
 

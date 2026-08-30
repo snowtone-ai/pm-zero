@@ -1,10 +1,10 @@
-# pm-zero v12.1 — Executable-Only Solo-Dev OS
+# pm-zero v12.2 — Executable-Core Solo-Dev OS
 
-    Version   v12.1
-    Date      2026-08-21
-    Runtime   Claude Code 2.1.224 · Codex CLI · Windows 11 · PowerShell · Claude Pro ($20/mo, no overage)
-    Replaces  v12 (deleted in this release)
-    Size      683 lines, up from v12's 557 — the first release since v12 to grow, by design (§16)
+    Version   v12.2
+    Date      2026-08-30
+    Runtime   Claude Code 2.1.241 · Codex CLI 0.151.0 · Windows 11 · PowerShell · Claude Pro ($20/mo, no overage)
+    Replaces  v12.1 (deleted in this release)
+    Size      760 lines
 
 ---
 
@@ -34,33 +34,38 @@ Three things drove the design, all established by audit rather than assumption:
    confirm the consequence: `scripts/verify.mjs` (executable) exists in 12 of 18 projects;
    not one gate-assessment artifact survives anywhere.
 
-**v12.1 adds one thing on top of that subtraction.** A separately drafted frontend/UI
-design-operations document (`AI_Agent_Design_Operating_System.md`) proposed an 8-phase workflow,
-five operating rules, and a 14-point self-critique checklist for UI work — almost all of it the
-same shape of self-graded prose judgment point 3 already rejected for the backend. Section 16
-keeps only what reduces to a check, a triggered tool invocation, or a config value, and discards
-the rest under the same constitution, not a looser one for having a UI in scope.
+**v12.2 corrects a bad abstraction in v12.1.** Product direction was forced through an
+executable-quality-gate test, so the frontend layer preserved mechanisms while discarding the
+operator's intended result. v12.2 withdraws that layer in full and rebuilds it from the current
+instruction: one live capability-selection gate before implementation (Section 16), followed by
+direct product constraints for frontend work (Section 17). Chrome DevTools is the sole global
+MCP default; every other MCP, plugin, or skill must earn project scope from current research.
 
 ---
 
 ## 1. The Constitution
 
-> **A rule enters pm-zero only if it is a config value, a script exit code, or a hook.**
+> **A quality claim enters pm-zero only if it is a config value, a script exit code, or a hook.**
 
 That is the whole of it. Three consequences, all intended:
 
-- **Prose advice is no longer admissible.** If a lesson cannot be written as a check, the
-  correct response is usually that it was not a rule to begin with.
+- **Self-graded prose advice is no longer admissible as evidence.** If a quality claim cannot be
+  written as a check, it cannot be reported as a passed gate.
 - **Quality claims become falsifiable.** "The architecture is sound" is not a claim v12 can
   make. "`node scripts/verify.mjs` exits 0" is.
 - **Growth has a cost again.** Every future addition must be built, not merely written. That
   is the pressure v4–v11 never had.
 
-One deliberate exception is carried, and it is named rather than smuggled: the global
+Two deliberate classes sit outside that admission test. First, the global
 `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` contain a small number of judgment-level
 instructions ("prefer minimal safe edits", "think before editing") that no exit code can
 express. They are kept because removing them measurably degrades output, and are capped at the
 length of those files. They are the exception that must justify itself, not the default.
+
+Second, **operator-authored product constraints and mandatory work-order steps are directives,
+not quality claims**. They may be prose when they state a concrete trigger and an observable
+result. They are not converted into a checklist the implementing agent grades itself against;
+where possible, the result is inspected in the running product. Sections 16–17 use this class.
 
 The following operator-facing judgment is part of that exception and belongs in those global
 instruction files, not in a project checklist or a self-assessed quality gate:
@@ -117,10 +122,16 @@ Changes from v11.1.1's thirteen:
 | `.codex/config.toml` | **added** | Deliberately empty project-scoped override file. It makes Codex support explicit; security-sensitive defaults remain global because Codex ignores them at project scope. |
 
 Optional, added only on a concrete need: `.claude/rules/*.md`, `.claude/agents/*.md`,
-`.claude/commands/*.md`, `.mcp.json`, `CONTEXT.md`, `scripts/lib/*`, and — for a project with a
-UI surface — `DESIGN.md`, `ASSET_REGISTRY.md` (Section 16.6).
+`.claude/commands/*.md`, `.mcp.json`, `CONTEXT.md`, and `scripts/lib/*`. MCP servers, plugins,
+and skills beyond the global baseline are selected and installed per project under Section 16;
+their presence is never inferred from framework detection alone.
 
-`AGENTS.md` must direct Codex to read `CLAUDE.md` first, then the same startup ledger files.
+Startup is a pointer traversal, not a bulk history load: read `CLAUDE.md`, current `state.md`,
+current blockers in `issues.md`, and the `repo-map.md` Summary. Resolve the active task and any
+decision from those pointers, then query only the relevant row or ID. Do not read an entire
+historical `tasks.md` or `decisions.md` by default.
+
+`AGENTS.md` must direct Codex to read `CLAUDE.md` first, then the same startup pointers.
 Because Codex does not load Claude's `paths:` rules automatically, it must also instruct Codex to
 open every matching `.claude/rules/*.md` before editing a governed path. The ledger, verification,
 git workflow, and learning loop are shared; only runtime mechanics belong in `AGENTS.md`.
@@ -194,6 +205,20 @@ Do not combine `default_permissions` with legacy `sandbox_mode` or
 profile, Windows sandbox settings, project-scope restrictions, and hook input shape against the
 official Codex configuration reference before changing this baseline.
 
+**Global integration baseline — one MCP, nothing else.** The pm-zero-managed user/global
+capability set for both Claude Code and Codex is exactly **Chrome DevTools MCP**, installed from
+Google's official repository with the maintainer's current `@latest` invocation. It supplies
+browser inspection, interaction, network, console, and performance tooling needed across
+projects. No other MCP server, plugin, or skill is a pm-zero global default. Account connectors
+that the operator independently enabled are outside this baseline and are not inherited as
+pm-zero project dependencies.
+
+Chrome DevTools exposes the attached browser's page content to the MCP client. Use a dedicated
+or isolated browser profile for agent work and do not open secrets or unrelated authenticated
+sessions in it. All additional capabilities are project-scoped and selected by Section 16.
+
+Canonical source: [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp).
+
 ---
 
 ## 5. Session Protocol (three rules, replacing v11's ten)
@@ -209,7 +234,8 @@ official Codex configuration reference before changing this baseline.
    discipline without importing Claude-specific cache or slash-command claims.
 3. **Delegate wide file reading** to a subagent, whose context is discarded when the summary
    returns. Do not pull many files into the main context. Codex may use up to its configured
-   global worker ceiling when write scopes are disjoint.
+   global worker ceiling when write scopes are disjoint. Commands that write the same generated
+   directory must not run concurrently in one worktree; isolate the worktree or output directory.
 
 Retired from v11's protocol, with cause: Haiku-first reading (folded into rule 3), RTK
 (removed in v11.1.1 after a 425-trial paired benchmark), per-task effort escalation (Section 6),
@@ -247,8 +273,8 @@ If Opus is unavailable, `fallbackModel` substitutes Sonnet 5. The pipeline never
 **Codex routing is intentionally separate.** Use the model and reasoning effort configured in
 `~/.codex/config.toml`; do not copy Claude's Sonnet/Opus names, `ultrathink`, prompt-cache, or
 subscription-budget rules into `AGENTS.md`. The shared rule is operational: use a fresh-context
-reviewer for large, behaviour-changing, or hard-to-undo diffs; use worker subagents only for
-disjoint scopes; keep small fixes in the main context.
+reviewer for large, cross-cutting, contract-changing, or hard-to-undo diffs; use worker subagents
+only for disjoint scopes; keep small fixes in the main context.
 
 ---
 
@@ -260,10 +286,11 @@ disjoint scopes; keep small fixes in the main context.
     lint · typecheck · test · build
 
 Plus, as standing requirements that are themselves executable or observable:
-- a **reproduction test** before every bug fix
+- the **smallest deterministic failing reproduction** before every bug fix. Prefer a focused
+  automated test when cheap and stable; a repeatable browser/API/CLI scenario with an explicit
+  assertion is sufficient when the fault exists only at that layer
 - **`gitleaks git --no-banner`** before push, when available
 - a **Japanese handoff** in `HANDOFF-JA.md` on completion
-- for a project that has adopted `DESIGN.md`, the **raw-value lint** (Section 16.2)
 
 **`.github/workflows/ci.yml` — the one addition in v12, and the most important change in it.**
 
@@ -294,7 +321,14 @@ consumes attention and returns a false signal.
 
 **Verification depth** (retained from v11 — these map to real commands, so they pass the
 constitution): **quick** for docs and low-risk config; **standard** = `node scripts/verify.mjs`;
-**final** = standard + CI green + Section 8 review.
+**final** = standard + CI green + Section 8 Tier 1 review when its trigger applies.
+
+Verification is layered, not repeated by default. During implementation run the narrowest
+affected check. Run `verify.mjs` once for a stable product-code candidate; after a failure,
+iterate on only the failing check and then run one final full verification. Rerun the full suite
+only when product source, configuration, dependencies, or generated artifacts it consumes change.
+Markdown-only evidence or handoff edits do not invalidate a green product-code result. CI is the
+PR merge gate, not a gate for every intermediate commit.
 
 ---
 
@@ -303,8 +337,8 @@ constitution): **quick** for docs and low-risk config; **standard** = `node scri
 - **Tier 0 — deterministic.** `verify.mjs` locally, then CI on the PR. Nothing proceeds past a
   red check. This is the tier that does the work.
 - **Tier 1 — fresh context.** The `reviewer` subagent reads the diff with no implementation
-  history. Triggered when the change is large, changes behaviour, is hard to undo, or touches
-  shared UI components or design tokens (Section 16.5).
+  history. Triggered when the change is large, crosses routes or subsystems, changes persistence,
+  auth, or integration contracts, or is hard to undo.
 
 The mechanism that makes Tier 1 work is the *fresh context*, not the model size — a reviewer
 that inherited the implementer's assumptions inherits their blind spots too. Opus is used
@@ -313,6 +347,8 @@ because a subagent's model is free to the parent (Section 6), not because Sonnet
 Reviewer instruction, preserved from v11 because it is empirically grounded: **do not tell the
 reviewer to report only serious issues.** Modern models follow that literally and recall drops.
 Ask for everything with severity and confidence; the main agent filters.
+The reviewer consumes current Tier 0 evidence and does not rerun the same deterministic suite
+unless that evidence is missing or stale, or a finding needs a focused reproduction.
 
 **v11's Tier 2 is deleted.** It fired on auth, billing, DB schema, RLS, deploy, production data
 and PII — categories that essentially do not exist in this operator's projects. A tier that has
@@ -339,23 +375,22 @@ ESM resolver while build and typecheck both pass, so the gap stays invisible unt
 imports the module. It is accurate, specific, and preventive. **The mechanism works when it
 fires.** It fired once in four months.
 
-**v12's loop.** One question, asked on the *first* surprising failure:
+**v12's loop.** Start with the failing layer and the smallest deterministic reproduction:
 
 ```text
 Something failed in a way you did not expect
-  └── Can a machine detect this?
-        ├── YES → add the check to scripts/verify.mjs
-        │         (+ a reproduction test if it is a bug)
-        │         Done. The lesson is now a build failure. ← THE DEFAULT
-        └── NO  → .claude/rules/<zone>.md with a paths: glob
-                  and a `由来:` line naming the failure and date. ← LAST RESORT
+  └── Can a cheap, stable machine check prevent a likely or high-impact recurrence?
+        ├── YES → add it at the narrowest executable layer
+        ├── NO, but a durable path-specific procedure is needed
+        │      → .claude/rules/<zone>.md with a paths: glob and a `由来:` line
+        └── NO durable prevention value → keep only the task's evidence; add no mechanism
 ```
 
 This is the constitution applied to learning: **a lesson that can be executed is worth more
 than a lesson that must be read**, because the executed one cannot be forgotten, compacted
-away, or skipped. The `task-plant` rule above is itself a candidate for conversion — a check
-that greps `src/lib/*.ts` for extension-less relative imports would turn that carefully written
-paragraph into a build failure nobody ever has to read.
+away, or skipped. Machine-detectable alone is not admission: a permanent gate must repay its
+runtime and false-positive cost. Transient cache, tool, and vendor failures should first improve
+the relevant environment or harness, not automatically expand every product's final suite.
 
 Supporting changes:
 - `docs/issues.md` becomes **currently blocked only**, and is **read at session start**.
@@ -384,6 +419,10 @@ scoped rules, since it has no automatic `.claude/rules/` loading.
 
 If a fact matters to the project it goes in a ledger file. If it matters to how the agent
 should treat the operator anywhere, it goes in memory. Never both.
+
+Within the ledger, each fact also has one owner: `tasks.md` owns execution and result,
+`state.md` only the current pointer, `decisions.md` rationale, and specialist ledgers their domain
+detail. Other files link by task/decision ID; they do not copy QA transcripts or command output.
 
 ---
 
@@ -567,117 +606,155 @@ has to pass first.
 
 ---
 
-## 16. Frontend/UI Operating Layer (v12.1 addition)
+## 16. Pre-Implementation Capability Gate (v12.2)
 
-Absorbed from a separately drafted document, `AI_Agent_Design_Operating_System.md` (2026-08-21,
-938 lines), and cut to whatever in it survives Section 1's constitution. Applies only to a
-project with a UI surface; a project without one adopts none of it.
+This gate runs **after the project and task are understood, and before implementation begins**,
+for every project. It is a live selection step, not a permanent tool catalogue.
 
-### 16.1 What survived the constitution
+### 16.1 Research before selection
 
-The source document is a workflow specification: an 8-phase implementation loop, five "Agent
-Operating Rules", a 14-point self-critique checklist, a tool stack, and four proposed ledger
-files (`PRODUCT.md`, `DESIGN.md`, `UX_RULES.md`, `ASSET_REGISTRY.md`). Nearly all of it is
-judgment about hierarchy, composition, and taste — exactly the shape of self-graded assessment
-Section 7 already found unenforceable for backend quality gates, now proposed again for the
-frontend. It does not enter pm-zero. Four pieces do, because each reduces to a check, a tool
-invocation with a defined trigger, or a config value:
+1. Derive the concrete capabilities the implementation needs: external systems or data,
+   repository knowledge, framework-specific procedure, browser work, and repeatable workflows.
+2. Web-search the current official vendor documentation, maintainer repository, release history,
+   and security notes for MCP servers, plugins, and skills that could supply those capabilities.
+   Do not select from model memory or a stale list.
+3. Compare only credible candidates on capability fit, recency and maintenance, Windows/runtime
+   compatibility, project scope, authentication and data exposure, permissions, context/tool-
+   schema cost, overlap with the global baseline, licence, and version/install reproducibility.
+4. Select the **smallest non-overlapping set**. Prefer an MCP server when it can expose the needed
+   external data, tool, or action directly. Use a skill for reusable instructions or scripts that
+   need no external service. Use a plugin when its bundled MCP/skills and distribution lifecycle
+   provide concrete value beyond installing those parts separately. “Prefer MCP” is a tiebreaker,
+   not permission to install an ill-fitting server.
+5. Install the selection at project scope, pinning a version when the maintainer supports it.
+   Verify discovery/connection and one representative read-only call. If nothing improves the
+   task, install nothing.
 
-| Source rule | pm-zero mechanism |
-|---|---|
-| §6 "Raw values" — no unregistered hex/px/radius/shadow | **verify.mjs lint check**, 16.2 |
-| §7 Rule 4 "No Blind Completion" — a screen isn't done until seen running | **Playwright MCP + `run` skill**, 16.3 |
-| §9 "User Prompt Contract" — a non-engineer can't review a diff but can react to a rendered design | **`/design-sync` + claude.ai/design**, 16.4 |
-| §7 Rule 5 / Phase 5 "Visual QA" — fresh-eyes audit of a finished screen | **Tier 1 reviewer trigger**, extended, 16.5 |
+Record the date, requirement, candidates, chosen name/type/source/version, permissions or data
+exposure, reason, scope, and smoke result in the relevant task or `docs/decisions.md`. Do not add
+a new ledger. Repeat the gate when the project enters a materially new domain, its runtime or
+requirements change, or an installed capability becomes stale or unavailable. Framework
+detection alone must never auto-provision integrations in `scripts/setup.mjs`.
 
-### 16.2 Executable: raw-value lint
+This division follows the current platform definitions: MCP connects external tools and context;
+a skill packages instructions, resources, and optional scripts; a plugin distributes a reusable
+bundle that may contain MCP servers and skills. Canonical sources:
+[OpenAI MCP](https://learn.chatgpt.com/docs/extend/mcp),
+[OpenAI skills](https://learn.chatgpt.com/docs/build-skills),
+[OpenAI plugins](https://learn.chatgpt.com/docs/build-plugins),
+[Claude Code MCP](https://code.claude.com/docs/en/mcp), and
+[Claude Code plugins](https://code.claude.com/docs/en/plugins).
 
-Once a project has adopted `DESIGN.md` (16.6), `scripts/verify.mjs`'s lint step additionally
-rejects, in changed frontend files, arbitrary values outside a registered token:
+---
 
-    bg-[#...]  text-[...px]  rounded-[...]  shadow-[...]  (or the equivalent in a non-Tailwind
-    styling system) unless listed under DESIGN.md's own "Design Token Rule" exception
+## 17. Frontend Product Directives (v12.2)
 
-The check only tests whether a value is registered, never whether it looks good — that judgment
-stays with the operator and the Tier 1 reviewer. A project with no `DESIGN.md` does not run it.
+These directives apply whenever a task creates or changes a user-facing interface. They are the
+operator's product constraints under Section 1, not a revival or refinement of v12.1's frontend
+layer. Existing product conventions remain only where they do not conflict with this section.
 
-### 16.3 Executable: browser self-verification before "done"
+### 17.1 Choose one real product model before designing
 
-Already global policy ("start the dev server and use the feature in a browser before reporting
-the task as complete"); this names the specific tool. Before a UI completion report: run the
-project (`run` skill), check the changed screen with Playwright MCP at the breakpoints the
-change touches, confirm no console/runtime error. Code-reading is not a substitute.
+Before implementation, define the product category, audience, and the one primary job of each
+affected page. Web-search current, comparable products with shipped interfaces; inspect enough
+credible candidates to choose **exactly one** strongest UI model. Record its URL, access date,
+why it fits, the structural and interaction ideas to adopt, and what must not be copied. Model
+information architecture, composition, hierarchy, and interaction—not its branding, proprietary
+copy, or assets. If no direct analogue exists, choose the closest interaction model and label the
+analogy as an inference.
 
-### 16.4 Executable: show the design to the user
+### 17.2 Keep each page singular and structurally simple
 
-Run `/design-login` once per machine, then `/design-sync` once per project, so Claude Design
-generates against the project's actual components instead of placeholders (requires Claude Code
-2.1.198+ on the Anthropic API — both already true of this runtime). For a change big enough to
-need sign-off before or mid-implementation — a new screen, a visual-direction change, the source
-document's "ハイクオリティにして" case — generate the design at claude.ai/design and show it to
-the operator instead of deciding unilaterally. The operator cannot review a diff; they can react
-to a rendered design. This is Rule 4 applied to the human rather than the agent.
+- One page has one dominant user job, one obvious primary action, and only the information needed
+  to make that action safe and understandable.
+- Do not compress excessive text, controls, metrics, help, and secondary states into one screen.
+  Move distinct subordinate jobs and detail into named child routes/pages with clear navigation
+  back to the parent. Progressive disclosure must simplify the current page, not hide a second
+  application inside an accordion or modal.
+- Prefer labels, ordering, whitespace, and direct manipulation over explanatory paragraphs. A
+  dense all-in-one dashboard is not a substitute for information architecture.
 
-### 16.5 Tier 1 reviewer: UI/visual changes as a trigger
+### 17.3 No panel collections and no rounded UI
 
-Section 8's trigger list gains one member: a change that touches shared components or design
-tokens. The reviewer opens `DESIGN.md` and whatever screenshots 16.3 captured, and checks token
-reuse, component reuse, and cross-screen consistency — the fresh-context substitute for the
-source document's Phase 5 "Visual QA", which this operator cannot self-administer any more
-reliably than the seven backend gates Section 7 already deleted for the same reason.
+- Do not design a page as a collection of cards, floating containers, nested panels, or decorative
+  boxed groups. Prefer one continuous canvas organised by typography, whitespace, alignment,
+  dividers, lists, tables, and clear sections.
+- A bounded surface is allowed only when the interaction itself requires a separate context, such
+  as a modal, drawer, editor, or inspector; it must not become a repeated decorative card pattern.
+- Authored UI surfaces and controls use **square corners**: `border-radius: 0`. Do not create
+  rounded cards, buttons, inputs, badges, pills, capsules, or round-cropped component shells.
+  Intrinsically circular source artwork is not a UI corner, but the interface must not crop it into
+  a circle merely as decoration.
 
-### 16.6 Optional files, added only on concrete need
+### 17.4 One hierarchy system: Apple HIG
 
-Same rule as every other optional file in Section 3.
+Apple Human Interface Guidelines are the sole external rule system for information hierarchy in
+pm-zero. Adopt their principles, not Apple's visual skin or platform components:
 
-    DESIGN.md          tokens, typography, spacing/radius scale, component rules, motion —
-                        the registry 16.2 reads
-    ASSET_REGISTRY.md  name / type / source / license / context per asset — only once a
-                        project has enough assets that duplication is a real risk
+1. Place essential information and the primary action first—top and leading in the reading
+   direction—and give them space. Put secondary information in a subordinate or separate view.
+2. Establish hierarchy in this order: placement and grouping; type size and weight; spacing and
+   alignment; then contrast and color. Keep type roles and typeface count limited and consistent.
+3. Use color to communicate status, relationships, and importance, never as the only signal.
+4. Keep motion purposeful, brief, precise, and interruptible; it must preserve context without
+   forcing the user to wait.
 
-`PRODUCT.md` and `UX_RULES.md` from the source document are not added: `docs/vision.md` already
-carries product purpose and priorities, and per-feature UX principles are judgment calls of the
-kind Section 1's global-file exception already covers, not a new ledger file.
+The operator's constraints in Sections 17.2–17.3 override Apple component styling, including any
+rounded or glass-like treatment. Canonical sources:
+[Design principles](https://developer.apple.com/design/human-interface-guidelines/design-principles),
+[Layout](https://developer.apple.com/design/human-interface-guidelines/layout),
+[Typography](https://developer.apple.com/design/human-interface-guidelines/typography),
+[Color](https://developer.apple.com/design/human-interface-guidelines/color), and
+[Motion](https://developer.apple.com/design/human-interface-guidelines/motion).
 
-### 16.7 Tool stack: global once, per project on detection
+### 17.5 Every action preserves continuity
 
-Every name in the source document's stack was checked against what actually exists (most did;
-"Awesome Claude Design" and `tweakcn` are a reference list and an external web app, not Claude
-Code integrations, and are not installed anywhere). What exists splits cleanly into two groups by
-a single criterion: **does its value depend on which project it runs in?**
+Every navigation, button press, state change, and asynchronous operation gives immediate visible
+feedback. Use simple transitions and state changes to preserve spatial and causal continuity:
+pressed, pending, success, failure, skeleton/progress, or a safe optimistic update as appropriate.
+Do not produce blank flashes, unexplained freezes, layout jumps, or abrupt replacement without
+orientation. Animation is short and restrained, never blocks input, and has an instant or
+non-motion equivalent under `prefers-reduced-motion`. The requirement is continuous feedback,
+not ornamental motion on every event.
 
-**Global — installed once, deployed as part of this release, because the value is the same in
-every session and the tool-schema cost is paid once, not per project:**
+### 17.6 Search for assets; the AI does not generate them
 
-    frontend-design@claude-code-plugins   Anthropic's official design-framework plugin.
-                                            claude plugin marketplace add anthropics/claude-code
-                                            claude plugin install frontend-design@claude-code-plugins
-    context7                               Library-doc lookup MCP; not frontend-specific.
-                                            claude mcp add --scope user context7 -- npx -y @upstash/context7-mcp
+When the product actually needs an effect, animation, transition asset, or sound, Web Search for
+an existing high-quality maintained asset or library before implementation. The AI must not
+synthesize or generate an original effect, animation file, or sound. Verify licence, attribution,
+source integrity, format, bundle/performance cost, accessibility, and browser support; record the
+source URL, version, and licence in the relevant task, decision, or dependency metadata. Sound
+must be expected and user-controllable. If no suitable licensed asset exists, omit it or surface
+the gap to the operator—do not generate a substitute.
 
-**Per-project, auto-provisioned on UI detection — because each depends on that project's own
-files (a `components.json`, a written skill directory) or is dead weight in a session with no
-browser to inspect.** This is a `scripts/setup.mjs` step, run once, alongside the existing
-`npm install`: if `package.json` depends on a frontend framework (`react`, `vue`, `svelte`,
-`solid-js`, `next`, `nuxt`, `astro`, `@angular/core`) or the project has already adopted
-`DESIGN.md` (16.6), then and only then —
+### 17.7 Completion evidence
 
-    npx impeccable install                                    (writes .claude/skills/impeccable/)
-    npx skills add shadcn/ui                                  (only if shadcn/ui is a dependency)
-    claude mcp add --scope project chrome-devtools -- npx chrome-devtools-mcp@latest
-                                                                (github.com/ChromeDevTools/chrome-devtools-mcp)
+Before reporting frontend work complete, run the product and inspect every changed route and
+primary action with Chrome DevTools MCP at the widths the product supports. Confirm the page's
+single job and hierarchy remain obvious; subordinate information has a real route; authored
+controls and surfaces have square computed corners; the layout has not become a card/panel grid;
+actions provide continuous feedback; reduced motion works; and console, network, and runtime are
+clean. Record the selected product model, Apple HIG source links, any asset sources, inspected
+routes/actions, and observed result in the task evidence. Code reading alone is not completion
+evidence for a user interface.
 
-No UI surface detected → none of the three run, and nothing asks the operator — consistent with
-the zero-prompt autonomy baseline already in effect. A project that gains a UI surface later
-re-runs `setup.mjs` the next time it is invoked, which re-checks the same condition.
+---
 
-### 16.8 Migration from v12
+## 18. Migration from v12.1
 
-Global config changed for the first time under this constitution, deployed as part of this
-release: `frontend-design@claude-code-plugins` (plugin, user scope) and `context7` (MCP, user
-scope) — both installed and verified connected on 2026-08-21. No hook or settings-file change.
-`AI_Agent_Design_Operating_System.md` is absorbed into this section and deleted;
-`pm-zero-knowledge-v12.md` is deleted, superseded by this file. Per-project, applied the next
-time `scripts/setup.mjs` runs on a project with a UI surface: the 16.7 auto-provisioning step
-fires; separately, adopt `DESIGN.md` when there is a token system to register, and run
-`/design-login` once per machine before relying on 16.4.
+The entire v12.1 frontend/UI layer is withdrawn before this replacement takes effect. Its raw-
+value token lint, Playwright/run-skill mandate, design-sync flow, UI-specific reviewer trigger,
+special `DESIGN.md` and `ASSET_REGISTRY.md` roles, global frontend-design plugin and Context7 MCP,
+and framework-triggered Impeccable/shadcn/Chrome provisioning have **no authority in v12.2**.
+Historical descriptions in `update.md` remain evidence of what shipped, not active instructions.
+
+Deployed with this release:
+
+1. Remove the v12.1 global frontend-design plugin, Context7 MCP, and Playwright MCP default.
+2. Keep or install Chrome DevTools MCP as the sole pm-zero global MCP default in Claude Code and
+   Codex; independently enabled account connectors are untouched.
+3. Put Sections 16–17 into the generated global/project instructions without reviving any old UI
+   files or tool triggers. Existing projects run the capability gate on their next implementation
+   task and retain an old integration only if current research selects it for that project.
+4. Replace `pm-zero-knowledge-v12.1.md` with this file. Non-frontend v12.1 work in progress is
+   retained where it improves the executable core and does not conflict with this migration.
