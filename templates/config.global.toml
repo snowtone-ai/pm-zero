@@ -1,0 +1,19 @@
+# pm-zero v13 が管理するキーだけの部分設定。
+# ~/.codex/config.toml の同名キーへ統合する。ファイル全文を置換しない。
+# 旧 model_auto_compact_token_limit は削除し、モデルの既定に任せる。
+# 任意の％指定は非対応。根拠・50/60/70％比較はdocs/decisions.md D08。
+approval_policy = "never"
+default_permissions = ":danger-full-access"
+file_opener = "vscode"
+model = "gpt-6-astra"
+model_reasoning_effort = "xhigh"
+model_verbosity = "low"
+web_search = "live"
+
+[features]
+context_management = { experimental_mode = true }
+
+[agents]
+max_concurrent_threads_per_session = 2
+default_subagent_model = "gpt-5.6-luna"
+default_subagent_reasoning_effort = "xhigh"
